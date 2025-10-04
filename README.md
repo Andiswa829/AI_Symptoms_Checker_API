@@ -1,4 +1,244 @@
-# Symptoms Checker API
+# 🏥 Symptoms Checker API
+
+A comprehensive ASP.NET Core Web API for healthcare applications with Google OAuth integration, AI-powered symptom analysis, appointment booking, and health data management.
+
+## ✨ Features
+
+- 🔐 **Authentication & Authorization**: JWT + Google OAuth 2.0 integration
+- 🤖 **AI-Powered Symptom Analysis**: Intelligent health assessment system
+- 📅 **Appointment Management**: Book, view, and cancel medical appointments
+- 👨‍⚕️ **Doctor Directory**: Search doctors by specialization and location
+- 📊 **Health Data Management**: Secure personal health information storage
+- 🚨 **Disease Outbreak Alerts**: Real-time outbreak notifications and tracking
+- 📖 **Comprehensive API Documentation**: Interactive Swagger UI
+- 🏗️ **Modern Architecture**: Clean architecture with Entity Framework Core
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- .NET 8.0 SDK
+- SQL Server LocalDB
+- Visual Studio 2022 or VS Code
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/symptoms-checker-api.git
+   cd symptoms-checker-api
+   ```
+
+2. **Install dependencies**
+   ```bash
+   dotnet restore
+   ```
+
+3. **Update database**
+   ```bash
+   dotnet ef database update
+   ```
+
+4. **Configure Google OAuth** (Optional)
+   - Create a Google Cloud Console project
+   - Enable Google+ API
+   - Create OAuth 2.0 credentials
+   - Update `appsettings.json` with your credentials:
+   ```json
+   {
+     "Google": {
+       "ClientId": "your-google-client-id",
+       "ClientSecret": "your-google-client-secret"
+     }
+   }
+   ```
+
+5. **Run the application**
+   ```bash
+   dotnet run
+   ```
+
+6. **Access the API**
+   - Swagger UI: `http://localhost:3000`
+   - API Base: `http://localhost:3000/api`
+
+## 📚 API Endpoints
+
+### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | Standard login |
+| POST | `/api/auth/google` | Google OAuth login |
+| POST | `/api/auth/external` | External provider login |
+
+### Symptoms
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/symptoms/analyze` | AI symptom analysis |
+| GET | `/api/symptoms/history` | User symptom history |
+
+### Appointments
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/appointments` | List user appointments |
+| POST | `/api/appointments` | Book new appointment |
+| PUT | `/api/appointments/{id}` | Update appointment |
+| DELETE | `/api/appointments/{id}` | Cancel appointment |
+
+### Doctors
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/doctors/search` | Search doctors |
+
+### Health Data
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health/data` | Get health data |
+| POST | `/api/health/data` | Store health data |
+
+### Outbreaks
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/outbreaks/active` | Active outbreaks |
+| GET | `/api/outbreaks/symptoms/{symptom}` | Outbreaks by symptom |
+
+## 🔧 Configuration
+
+### Database Connection
+Update `appsettings.json`:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=SymptomsCheckerDb;Trusted_Connection=true;MultipleActiveResultSets=true"
+  }
+}
+```
+
+### JWT Configuration
+```json
+{
+  "Jwt": {
+    "Key": "your-super-secret-key-here-make-it-long-and-secure",
+    "Issuer": "SymptomsCheckerApi",
+    "Audience": "SymptomsCheckerApp",
+    "ExpiryInDays": 7
+  }
+}
+```
+
+## 🏗️ Project Structure
+
+```
+├── Controllers/          # API Controllers
+├── DTOs/                # Data Transfer Objects
+├── Data/                # Database Context
+├── Models/              # Entity Models
+├── Services/            # Business Logic Services
+├── Migrations/          # Entity Framework Migrations
+├── Properties/          # Launch Settings
+├── wwwroot/             # Static Files
+└── Program.cs           # Application Entry Point
+```
+
+## 🛠️ Technologies Used
+
+- **Framework**: ASP.NET Core 8.0
+- **Database**: Entity Framework Core with SQL Server
+- **Authentication**: ASP.NET Core Identity + JWT Bearer
+- **OAuth**: Google OAuth 2.0 integration
+- **API Documentation**: Swagger/OpenAPI
+- **Architecture**: Clean Architecture principles
+
+## 🔒 Security Features
+
+- JWT Bearer token authentication
+- Google OAuth 2.0 integration
+- Password hashing with ASP.NET Core Identity
+- CORS configuration
+- Input validation and sanitization
+- Secure password policies
+
+## 📊 Database Schema
+
+The API uses Entity Framework Core with the following main entities:
+- **User**: Authentication and profile information
+- **SymptomReport**: AI analysis results and history
+- **Appointment**: Medical appointment bookings
+- **Doctor**: Healthcare provider directory
+- **HealthData**: Personal health information
+- **OutbreakAlert**: Disease outbreak tracking
+
+## 🧪 Testing
+
+Run the test suite:
+```bash
+dotnet test
+```
+
+Use the provided `.http` files for manual API testing:
+- `SymptomsCheckerApi.http` - General API endpoints
+- `SymptomsCheckerApi-GoogleAuth.http` - Google authentication tests
+
+## 🚀 Deployment
+
+### Development
+```bash
+dotnet run
+```
+
+### Production
+```bash
+dotnet publish -c Release
+```
+
+### Docker (Coming Soon)
+```bash
+docker build -t symptoms-checker-api .
+docker run -p 8080:80 symptoms-checker-api
+```
+
+## 📋 Environment Variables
+
+For production, use environment variables:
+- `ConnectionStrings__DefaultConnection`
+- `Jwt__Key`
+- `Jwt__Issuer`
+- `Jwt__Audience`
+- `Google__ClientId`
+- `Google__ClientSecret`
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👥 Authors
+
+- **Your Name** - *Initial work* - [YourGitHub](https://github.com/yourusername)
+
+## 🙏 Acknowledgments
+
+- ASP.NET Core team for the excellent framework
+- Google for OAuth 2.0 integration
+- Entity Framework Core team
+- Swagger/OpenAPI for documentation
+- All contributors who helped with this project
+
+## 📞 Support
+
+For support, email your-email@example.com or create an issue on GitHub.
+
+---
+
+**Built with ❤️ using ASP.NET Core**
 
 A comprehensive ASP.NET Core Web API backend for a symptoms checker application that provides AI-powered symptom analysis, appointment booking, health data management, and outbreak tracking capabilities.
 
