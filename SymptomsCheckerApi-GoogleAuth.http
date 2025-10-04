@@ -1,0 +1,96 @@
+### Test Google Authentication API Endpoints
+# Make sure to replace the values below with actual test data
+
+### 1. Test regular registration (baseline)
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "TestPassword123!",
+  "confirmPassword": "TestPassword123!",
+  "firstName": "Test",
+  "lastName": "User",
+  "dateOfBirth": "1990-01-01T00:00:00Z",
+  "gender": "Other"
+}
+
+### 2. Test regular login (baseline)
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "TestPassword123!",
+  "rememberMe": false
+}
+
+### 3. Test Google Authentication
+# NOTE: You need to get a real Google ID token from the frontend
+# This is just a template - replace with actual token from Google Sign-In
+POST http://localhost:3000/api/auth/google
+Content-Type: application/json
+
+{
+  "idToken": "YOUR_GOOGLE_ID_TOKEN_HERE",
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@gmail.com",
+  "picture": "https://lh3.googleusercontent.com/a/default-user=s96-c"
+}
+
+### 4. Test External Authentication (Generic)
+POST http://localhost:3000/api/auth/external
+Content-Type: application/json
+
+{
+  "provider": "google",
+  "idToken": "YOUR_GOOGLE_ID_TOKEN_HERE",
+  "email": "john.doe@gmail.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "picture": "https://lh3.googleusercontent.com/a/default-user=s96-c"
+}
+
+### 5. Test authenticated endpoint with Google user
+# Use the JWT token from the Google auth response
+GET http://localhost:3000/api/symptoms/history
+Authorization: Bearer YOUR_JWT_TOKEN_HERE
+
+### 6. Test Google auth with existing email
+# First create a user with email/password, then try Google auth with same email
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "existing@gmail.com",
+  "password": "ExistingPassword123!",
+  "confirmPassword": "ExistingPassword123!",
+  "firstName": "Existing",
+  "lastName": "User",
+  "dateOfBirth": "1985-05-15T00:00:00Z"
+}
+
+###
+# Then try Google auth with the same email
+POST http://localhost:3000/api/auth/google
+Content-Type: application/json
+
+{
+  "idToken": "GOOGLE_TOKEN_FOR_existing@gmail.com",
+  "email": "existing@gmail.com",
+  "firstName": "Existing",
+  "lastName": "User"
+}
+
+### Notes:
+# - To get a real Google ID token for testing:
+#   1. Set up a simple HTML page with Google Sign-In
+#   2. Use the browser console to get the credential
+#   3. Or use Postman's OAuth 2.0 authorization
+# 
+# - The Google Client ID in appsettings.json must match the one used to generate the token
+# 
+# - For production testing, make sure your domain is added to Google Console origins
+# 
+# - The isNewUser field in the response indicates if this was the first time logging in with Google

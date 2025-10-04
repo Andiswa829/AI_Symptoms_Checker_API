@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SymptomsCheckerApi", "SymptomsCheckerApi.csproj", "{7CAEEB12-3E59-3E0B-5644-69166DCDC0BB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7CAEEB12-3E59-3E0B-5644-69166DCDC0BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7CAEEB12-3E59-3E0B-5644-69166DCDC0BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7CAEEB12-3E59-3E0B-5644-69166DCDC0BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7CAEEB12-3E59-3E0B-5644-69166DCDC0BB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2C49DBB5-CE24-409E-8071-1EBE1C9653CD}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,6 @@
+@SymptomsCheckerApi_HostAddress = http://localhost:3000
+
+GET {{SymptomsCheckerApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
