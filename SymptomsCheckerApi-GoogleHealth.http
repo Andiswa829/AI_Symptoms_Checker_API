@@ -1,0 +1,111 @@
+### Google Health API Integration Test
+### Base URL: http://localhost:3000
+
+### Variables
+@baseUrl = http://localhost:3000
+@accessToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+@googleToken = ya29.a0AfH6SMC...
+
+###
+# 1. Register a new user (if needed)
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+    "email": "testuser@example.com",
+    "password": "TestPass123!",
+    "firstName": "Test",
+    "lastName": "User"
+}
+
+###
+# 2. Login to get JWT token
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+    "email": "testuser@example.com",
+    "password": "TestPass123!"
+}
+
+###
+# 3. Validate Google Health token
+POST {{baseUrl}}/api/googlehealth/validate-token
+Authorization: {{accessToken}}
+Content-Type: application/json
+
+"{{googleToken}}"
+
+###
+# 4. Sync all Google Health data
+POST {{baseUrl}}/api/googlehealth/sync
+Authorization: {{accessToken}}
+Content-Type: application/json
+
+{
+    "accessToken": "{{googleToken}}",
+    "startDate": "2025-09-28T00:00:00Z",
+    "endDate": "2025-10-05T23:59:59Z",
+    "dataTypes": [
+        "heart_rate",
+        "blood_pressure", 
+        "oxygen_saturation",
+        "body_temperature",
+        "sleep",
+        "activity",
+        "stress_level"
+    ]
+}
+
+###
+# 5. Get Heart Rate data
+GET {{baseUrl}}/api/googlehealth/heart-rate?accessToken={{googleToken}}&startDate=2025-09-28T00:00:00Z&endDate=2025-10-05T23:59:59Z
+Authorization: {{accessToken}}
+
+###
+# 6. Get Blood Pressure data
+GET {{baseUrl}}/api/googlehealth/blood-pressure?accessToken={{googleToken}}&startDate=2025-09-28T00:00:00Z&endDate=2025-10-05T23:59:59Z
+Authorization: {{accessToken}}
+
+###
+# 7. Get Oxygen Saturation data
+GET {{baseUrl}}/api/googlehealth/oxygen-saturation?accessToken={{googleToken}}&startDate=2025-09-28T00:00:00Z&endDate=2025-10-05T23:59:59Z
+Authorization: {{accessToken}}
+
+###
+# 8. Get Body Temperature data
+GET {{baseUrl}}/api/googlehealth/body-temperature?accessToken={{googleToken}}&startDate=2025-09-28T00:00:00Z&endDate=2025-10-05T23:59:59Z
+Authorization: {{accessToken}}
+
+###
+# 9. Get Sleep data
+GET {{baseUrl}}/api/googlehealth/sleep?accessToken={{googleToken}}&startDate=2025-09-28T00:00:00Z&endDate=2025-10-05T23:59:59Z
+Authorization: {{accessToken}}
+
+###
+# 10. Get Activity data
+GET {{baseUrl}}/api/googlehealth/activity?accessToken={{googleToken}}&startDate=2025-09-28T00:00:00Z&endDate=2025-10-05T23:59:59Z
+Authorization: {{accessToken}}
+
+###
+# 11. Get Stress Level data
+GET {{baseUrl}}/api/googlehealth/stress-level?accessToken={{googleToken}}&startDate=2025-09-28T00:00:00Z&endDate=2025-10-05T23:59:59Z
+Authorization: {{accessToken}}
+
+###
+# Test with minimal data sync (last 24 hours)
+POST {{baseUrl}}/api/googlehealth/sync
+Authorization: {{accessToken}}
+Content-Type: application/json
+
+{
+    "accessToken": "{{googleToken}}",
+    "dataTypes": ["heart_rate", "sleep", "activity"]
+}
+
+###
+# Test individual endpoint without date range (defaults to last 7 days)
+GET {{baseUrl}}/api/googlehealth/heart-rate?accessToken={{googleToken}}
+Authorization: {{accessToken}}
+
+###

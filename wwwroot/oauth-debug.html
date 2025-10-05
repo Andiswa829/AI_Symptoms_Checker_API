@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔧 OAuth Debug & Fix - Google Health API</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+        .container { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 10px 0; }
+        .success { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 10px 0; }
+        .error { background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 10px 0; }
+        .info { background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 10px 0; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 10px 0; }
+        button { background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; margin: 8px; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-warning:hover { background: #e0a800; }
+        textarea { width: 100%; height: 60px; font-family: monospace; font-size: 12px; border: 1px solid #ddd; padding: 8px; }
+        pre { background: #f1f3f4; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+        .step { background: white; padding: 15px; margin: 10px 0; border-radius: 6px; border-left: 4px solid #007bff; }
+        .step h4 { margin-top: 0; color: #007bff; }
+        .debug-output { background: #1e1e1e; color: #f8f8f2; padding: 15px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Google OAuth Debug & Fix Tool</h1>
+    
+    <div class="warning">
+        <strong>⚠️ This tool will help diagnose and fix your Google OAuth issues step by step.</strong><br>
+        We'll identify the exact problem and provide specific solutions.
+    </div>
+    
+    <div class="step">
+        <h4>Step 1: Basic Configuration Check</h4>
+        <button onclick="checkBasicConfig()">🔍 Check Configuration</button>
+        <div id="config-results"></div>
+    </div>
+    
+        <div class="step">
+            <h4>Step 2: Initialize Google APIs</h4>
+            <button onclick="initializeGoogleAPIs()" id="init-btn">🚀 Initialize Google APIs</button>
+            <button onclick="reinitializeWithDifferentSettings()" id="reinit-btn" class="btn-warning" style="display: none;">🔄 Try Different Settings</button>
+            <div id="init-results"></div>
+        </div>        <div class="step">
+            <h4>Step 3: Test Authentication (Simple)</h4>
+            <button onclick="testSimpleAuth()" id="simple-auth-btn" disabled>🔑 Test Basic Auth (Popup)</button>
+            <button onclick="testRedirectAuth()" id="redirect-auth-btn" disabled class="btn-success">🔄 Alternative: Redirect Auth</button>
+            <div id="simple-auth-results"></div>
+        </div>    <div class="step">
+        <h4>Step 4: Test Health Scopes</h4>
+        <button onclick="testHealthScopes()" id="health-auth-btn" disabled>💊 Test Health Permissions</button>
+        <div id="health-auth-results"></div>
+    </div>
+    
+        <div class="step">
+            <h4>Step 5: Test API Integration</h4>
+            <button onclick="testAPIConnection()" id="api-test-btn" disabled>🔗 Test API Connection</button>
+            <div id="api-results"></div>
+        </div>
+        
+        <div class="step">
+            <h4>Alternative: Manual Token Input</h4>
+            <p>If OAuth fails, you can manually get a token from Google OAuth Playground:</p>
+            <div>
+                <label><strong>Access Token:</strong></label><br>
+                <textarea id="manual-token" placeholder="Paste your Google access token here..."></textarea>
+                <br>
+                <button onclick="testManualToken()" class="btn-success">🧪 Test Manual Token</button>
+                <a href="https://developers.google.com/oauthplayground" target="_blank" class="btn-warning">🔗 Get Token from OAuth Playground</a>
+            </div>
+            <div id="manual-token-results"></div>
+        </div>    <div class="container">
+        <h3>🔍 Debug Output</h3>
+        <button onclick="clearDebugOutput()" class="btn-warning">🧹 Clear Log</button>
+        <button onclick="exportDebugLog()" class="btn-success">📁 Export Log</button>
+        <div id="debug-output" class="debug-output">
+            🔄 Debug output will appear here...<br>
+        </div>
+    </div>
+    
+    <div id="token-display" class="container" style="display: none;">
+        <h3>🔑 OAuth Tokens</h3>
+        <div>
+            <label><strong>Access Token:</strong></label><br>
+            <textarea id="access-token-display" readonly></textarea>
+        </div>
+        <div>
+            <label><strong>ID Token:</strong></label><br>
+            <textarea id="id-token-display" readonly></textarea>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration
+        const CLIENT_ID = '699206291871-pdv6amuetllvv28eplekjabbf1rsug8m.apps.googleusercontent.com';
+        const API_BASE = 'http://localhost:3000';
+        const HEALTH_SCOPES = [
+            'https://www.googleapis.com/auth/fitness.body.read',
+            'https://www.googleapis.com/auth/fitness.activity.read',
+            'https://www.googleapis.com/auth/fitness.sleep.read',
+            'https://www.googleapis.com/auth/fitness.heart_rate.read',
+            'https://www.googleapis.com/auth/fitness.blood_pressure.read',
+            'https://www.googleapis.com/auth/fitness.oxygen_saturation.read'
+        ];
+        
+        let googleAuth;
+        let currentUser;
+        
+        // Debug logging
+        function debugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const output = document.getElementById('debug-output');
+            const colors = {
+                info: '#61dafb',
+                success: '#4caf50',
+                error: '#f44336',
+                warning: '#ff9800'
+            };
+            const color = colors[type] || '#f8f8f2';
+            
+            output.innerHTML += `<span style="color: #888;">[${timestamp}]</span> <span style="color: ${color};">${message}</span><br>`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearDebugOutput() {
+            document.getElementById('debug-output').innerHTML = '🔄 Debug output cleared...<br>';
+        }
+        
+        function exportDebugLog() {
+            const content = document.getElementById('debug-output').innerText;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `oauth-debug-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        // Step 1: Check basic configuration
+        function checkBasicConfig() {
+            debugLog('🔍 Starting configuration check...', 'info');
+            const results = document.getElementById('config-results');
+            let html = '';
+            let allGood = true;
+            
+            // Check 1: Client ID
+            if (CLIENT_ID && CLIENT_ID.length > 50) {
+                html += '<div class="success">✅ Client ID: Present and valid format</div>';
+                debugLog('✅ Client ID check passed', 'success');
+            } else {
+                html += '<div class="error">❌ Client ID: Missing or invalid</div>';
+                debugLog('❌ Client ID check failed', 'error');
+                allGood = false;
+            }
+            
+            // Check 2: API Base URL
+            if (API_BASE && API_BASE.startsWith('http')) {
+                html += '<div class="success">✅ API Base URL: ' + API_BASE + '</div>';
+                debugLog('✅ API URL check passed: ' + API_BASE, 'success');
+            } else {
+                html += '<div class="error">❌ API Base URL: Invalid</div>';
+                debugLog('❌ API URL check failed', 'error');
+                allGood = false;
+            }
+            
+            // Check 3: Health Scopes
+            if (HEALTH_SCOPES && HEALTH_SCOPES.length > 0) {
+                html += `<div class="success">✅ Health Scopes: ${HEALTH_SCOPES.length} scopes configured</div>`;
+                debugLog(`✅ Health scopes check passed: ${HEALTH_SCOPES.length} scopes`, 'success');
+                HEALTH_SCOPES.forEach(scope => debugLog(`  - ${scope}`, 'info'));
+            } else {
+                html += '<div class="error">❌ Health Scopes: Missing</div>';
+                debugLog('❌ Health scopes check failed', 'error');
+                allGood = false;
+            }
+            
+            // Check 4: Google APIs Script
+            if (window.gapi) {
+                html += '<div class="success">✅ Google APIs Script: Loaded</div>';
+                debugLog('✅ Google APIs script loaded', 'success');
+            } else {
+                html += '<div class="error">❌ Google APIs Script: Not loaded</div>';
+                debugLog('❌ Google APIs script not loaded', 'error');
+                allGood = false;
+            }
+            
+            results.innerHTML = html;
+            
+            if (allGood) {
+                document.getElementById('init-btn').disabled = false;
+                debugLog('✅ Configuration check completed successfully', 'success');
+            } else {
+                debugLog('❌ Configuration check failed - fix issues above', 'error');
+            }
+        }
+        
+        // Alternative redirect-based authentication
+        function testRedirectAuth() {
+            debugLog('🔄 Using redirect-based authentication (no popups)...', 'info');
+            const results = document.getElementById('simple-auth-results');
+            
+            try {
+                // Check if we're returning from a redirect
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code');
+                const error = urlParams.get('error');
+                
+                if (error) {
+                    throw new Error(`OAuth redirect error: ${error}`);
+                }
+                
+                if (code) {
+                    debugLog('✅ OAuth code received from redirect', 'success');
+                    results.innerHTML = '<div class="success">✅ Redirect authentication successful! Processing...</div>';
+                    // In a real app, you'd exchange the code for tokens here
+                    document.getElementById('health-auth-btn').disabled = false;
+                    return;
+                }
+                
+                // Start redirect flow
+                debugLog('🌐 Starting OAuth redirect flow...', 'info');
+                const authUrl = new URL('https://accounts.google.com/oauth/v2/auth');
+                authUrl.searchParams.set('client_id', CLIENT_ID);
+                authUrl.searchParams.set('redirect_uri', window.location.href.split('?')[0]);
+                authUrl.searchParams.set('response_type', 'code');
+                authUrl.searchParams.set('scope', 'profile email');
+                authUrl.searchParams.set('access_type', 'offline');
+                authUrl.searchParams.set('prompt', 'select_account');
+                
+                results.innerHTML = '<div class="info">🔄 Redirecting to Google for authentication...</div>';
+                debugLog(`🌐 Redirecting to: ${authUrl.toString()}`, 'info');
+                
+                setTimeout(() => {
+                    window.location.href = authUrl.toString();
+                }, 1000);
+                
+            } catch (error) {
+                debugLog(`❌ Redirect authentication failed: ${error}`, 'error');
+                results.innerHTML = '<div class="error">❌ Redirect authentication failed: ' + error + '</div>';
+            }
+        }
+        
+        // Step 2: Initialize Google APIs
+        async function initializeGoogleAPIs() {
+            debugLog('🚀 Initializing Google APIs...', 'info');
+            const results = document.getElementById('init-results');
+            const btn = document.getElementById('init-btn');
+            
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Initializing...';
+            
+            try {
+                await new Promise((resolve, reject) => {
+                    gapi.load('auth2', {
+                        callback: resolve,
+                        onerror: reject,
+                        timeout: 5000,
+                        ontimeout: reject
+                    });
+                });
+                
+                debugLog('✅ Google Auth2 library loaded', 'success');
+                
+                googleAuth = gapi.auth2.init({
+                    client_id: CLIENT_ID,
+                    scope: 'profile email'  // Start with basic scopes
+                });
+                
+                debugLog('✅ Google Auth2 initialized with basic scopes', 'success');
+                
+                results.innerHTML = '<div class="success">✅ Google APIs initialized successfully</div>';
+                document.getElementById('simple-auth-btn').disabled = false;
+                document.getElementById('redirect-auth-btn').disabled = false;
+                btn.innerHTML = '✅ Initialized';
+                
+            } catch (error) {
+                debugLog(`❌ Failed to initialize Google APIs: ${error}`, 'error');
+                results.innerHTML = '<div class="error">❌ Failed to initialize Google APIs: ' + error + '</div>';
+                btn.innerHTML = '❌ Failed';
+                document.getElementById('reinit-btn').style.display = 'inline-block';
+            }
+        }
+        
+        // Reinitialize with different settings for troublesome cases
+        async function reinitializeWithDifferentSettings() {
+            debugLog('🔄 Reinitializing with alternative settings...', 'info');
+            const results = document.getElementById('init-results');
+            const btn = document.getElementById('reinit-btn');
+            
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Trying...';
+            
+            try {
+                // Try with cookie_policy and hosted_domain settings
+                googleAuth = gapi.auth2.init({
+                    client_id: CLIENT_ID,
+                    scope: 'profile email',
+                    cookie_policy: 'single_host_origin',
+                    fetch_basic_profile: true,
+                    ux_mode: 'popup'
+                });
+                
+                debugLog('✅ Google Auth2 reinitialized with alternative settings', 'success');
+                
+                results.innerHTML = '<div class="success">✅ Reinitialized successfully with alternative settings</div>';
+                document.getElementById('simple-auth-btn').disabled = false;
+                document.getElementById('redirect-auth-btn').disabled = false;
+                btn.innerHTML = '✅ Fixed';
+                
+            } catch (error) {
+                debugLog(`❌ Reinitialization failed: ${error}`, 'error');
+                results.innerHTML = '<div class="error">❌ Reinitialization failed. Try the manual token method below.</div>';
+                btn.innerHTML = '❌ Still Failed';
+            }
+        }
+        
+        // Step 3: Test simple authentication
+        async function testSimpleAuth() {
+            debugLog('🔑 Testing basic authentication...', 'info');
+            const results = document.getElementById('simple-auth-results');
+            const btn = document.getElementById('simple-auth-btn');
+            
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Authenticating...';
+            
+            try {
+                debugLog('📋 Checking if already signed in...', 'info');
+                
+                if (googleAuth.isSignedIn.get()) {
+                    debugLog('✅ User already signed in', 'success');
+                    currentUser = googleAuth.currentUser.get();
+                } else {
+                    debugLog('🔓 Not signed in, starting sign-in process...', 'info');
+                    
+                    // Try different sign-in options to avoid IdentityCredentialError
+                    const signInOptions = {
+                        prompt: 'select_account',
+                        ux_mode: 'popup',
+                        redirect_uri: window.location.origin
+                    };
+                    
+                    debugLog('🔧 Using enhanced sign-in options...', 'info');
+                    currentUser = await googleAuth.signIn(signInOptions);
+                    debugLog('✅ Sign-in successful', 'success');
+                }
+                
+                const profile = currentUser.getBasicProfile();
+                const authResponse = currentUser.getAuthResponse();
+                
+                debugLog(`👤 Signed in as: ${profile.getName()} (${profile.getEmail()})`, 'success');
+                debugLog(`🔑 Access token received (${authResponse.access_token.length} chars)`, 'success');
+                
+                results.innerHTML = `
+                    <div class="success">
+                        ✅ Authentication successful!<br>
+                        👤 User: ${profile.getName()} (${profile.getEmail()})<br>
+                        🔑 Access Token: ${authResponse.access_token.substring(0, 20)}...
+                    </div>
+                `;
+                
+                document.getElementById('health-auth-btn').disabled = false;
+                btn.innerHTML = '✅ Authenticated';
+                
+            } catch (error) {
+                // Better error handling for OAuth errors
+                let errorMessage = 'Unknown error';
+                if (error && error.error) {
+                    errorMessage = `${error.error}: ${error.details || error.error_description || 'No additional details'}`;
+                } else if (error && error.message) {
+                    errorMessage = error.message;
+                } else if (typeof error === 'string') {
+                    errorMessage = error;
+                } else {
+                    errorMessage = JSON.stringify(error, null, 2);
+                }
+                
+                debugLog(`❌ Authentication failed: ${errorMessage}`, 'error');
+                
+                // Provide specific solutions based on error type
+                let solutions = '';
+                if (error && error.error === 'popup_closed_by_user') {
+                    solutions = '<br><strong>Solution:</strong> Don\'t close the popup window. Try again and complete the sign-in process.';
+                } else if (error && error.error === 'access_denied') {
+                    solutions = '<br><strong>Solution:</strong> Make sure your email is added as a test user in Google Cloud Console.';
+                } else if (error && error.error === 'popup_blocked_by_browser') {
+                    solutions = '<br><strong>Solution:</strong> Enable popups for this site in your browser settings.';
+                } else if (errorMessage.includes('IdentityCredentialError') || errorMessage.includes('Error retrieving a token')) {
+                    solutions = '<br><strong>IdentityCredentialError Solutions:</strong><br>• Try the "Alternative: Redirect Auth" button instead<br>• Clear browser cookies for Google accounts<br>• Sign out of all Google accounts and try again<br>• Use incognito/private browsing mode<br>• Add your email as test user in Google Cloud Console';
+                } else {
+                    solutions = '<br><strong>Solutions to try:</strong><br>• Enable popups for localhost<br>• Add your email as test user in Google Cloud Console<br>• Try incognito/private browsing mode<br>• Use the redirect authentication method';
+                }
+                
+                results.innerHTML = `<div class="error">❌ Authentication failed: ${errorMessage}${solutions}</div>`;
+                btn.innerHTML = '❌ Failed';
+            }
+        }
+        
+        // Step 4: Test health scopes
+        async function testHealthScopes() {
+            debugLog('💊 Testing health scope permissions...', 'info');
+            const results = document.getElementById('health-auth-results');
+            const btn = document.getElementById('health-auth-btn');
+            
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Requesting Health Permissions...';
+            
+            try {
+                // Sign out first to force re-consent with health scopes
+                debugLog('🔄 Signing out to request health permissions...', 'info');
+                await googleAuth.signOut();
+                
+                // Reinitialize with health scopes
+                debugLog('🔧 Reinitializing with health scopes...', 'info');
+                googleAuth = gapi.auth2.init({
+                    client_id: CLIENT_ID,
+                    scope: ['profile', 'email', ...HEALTH_SCOPES].join(' ')
+                });
+                
+                debugLog('🔐 Requesting sign-in with health scopes...', 'info');
+                currentUser = await googleAuth.signIn({
+                    prompt: 'consent'  // Force consent screen
+                });
+                
+                const authResponse = currentUser.getAuthResponse();
+                const grantedScopes = authResponse.scope.split(' ');
+                
+                debugLog(`📊 Granted scopes: ${grantedScopes.length} total`, 'info');
+                
+                // Check each health scope
+                let healthScopesGranted = 0;
+                let scopeResults = '';
+                
+                HEALTH_SCOPES.forEach(scope => {
+                    const granted = grantedScopes.includes(scope);
+                    const status = granted ? '✅' : '❌';
+                    const scopeName = scope.split('.').pop();
+                    scopeResults += `${status} ${scopeName}<br>`;
+                    
+                    if (granted) {
+                        healthScopesGranted++;
+                        debugLog(`✅ ${scope}`, 'success');
+                    } else {
+                        debugLog(`❌ ${scope}`, 'error');
+                    }
+                });
+                
+                if (healthScopesGranted === HEALTH_SCOPES.length) {
+                    results.innerHTML = `
+                        <div class="success">
+                            ✅ All health permissions granted! (${healthScopesGranted}/${HEALTH_SCOPES.length})<br>
+                            ${scopeResults}
+                        </div>
+                    `;
+                    document.getElementById('api-test-btn').disabled = false;
+                    btn.innerHTML = '✅ Health Access Granted';
+                    
+                    // Show tokens
+                    displayTokens(authResponse);
+                    
+                } else {
+                    results.innerHTML = `
+                        <div class="error">
+                            ❌ Missing health permissions (${healthScopesGranted}/${HEALTH_SCOPES.length})<br>
+                            ${scopeResults}
+                            <br><strong>Solutions:</strong><br>
+                            • Make sure to scroll down and check ALL permissions in Google's consent screen<br>
+                            • Don't skip any health-related checkboxes<br>
+                            • Your email must be added as a test user in Google Cloud Console
+                        </div>
+                    `;
+                    btn.innerHTML = '❌ Missing Permissions';
+                }
+                
+            } catch (error) {
+                debugLog(`❌ Health scope test failed: ${error}`, 'error');
+                results.innerHTML = '<div class="error">❌ Health permissions failed: ' + error + '</div>';
+                btn.innerHTML = '❌ Failed';
+            }
+        }
+        
+        // Step 5: Test API connection
+        async function testAPIConnection() {
+            debugLog('🔗 Testing API connection...', 'info');
+            const results = document.getElementById('api-results');
+            const btn = document.getElementById('api-test-btn');
+            
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Testing API...';
+            
+            try {
+                const authResponse = currentUser.getAuthResponse();
+                
+                debugLog(`🌐 Testing connection to ${API_BASE}...`, 'info');
+                
+                // Test 1: Health token validation
+                debugLog('🔍 Testing health token validation...', 'info');
+                const validateResponse = await fetch(`${API_BASE}/api/googlehealth/validate-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(authResponse.access_token)
+                });
+                
+                if (!validateResponse.ok) {
+                    throw new Error(`Token validation failed: ${validateResponse.status}`);
+                }
+                
+                const validateData = await validateResponse.json();
+                debugLog(`✅ Token validation: ${JSON.stringify(validateData)}`, 'success');
+                
+                results.innerHTML = `
+                    <div class="success">
+                        ✅ API Connection Successful!<br>
+                        🔍 Token validation: ${validateData.valid ? 'Valid' : 'Invalid'}<br>
+                        🌐 API endpoint: ${API_BASE}<br>
+                        🎉 Ready for health data integration!
+                    </div>
+                `;
+                
+                btn.innerHTML = '✅ API Connected';
+                
+            } catch (error) {
+                debugLog(`❌ API test failed: ${error}`, 'error');
+                results.innerHTML = `
+                    <div class="error">
+                        ❌ API Connection Failed: ${error}<br>
+                        <strong>Possible solutions:</strong><br>
+                        • Make sure your API is running on ${API_BASE}<br>
+                        • Check if CORS is configured properly<br>
+                        • Verify the Google Health endpoints are implemented
+                    </div>
+                `;
+                btn.innerHTML = '❌ API Failed';
+            }
+        }
+        
+        // Display tokens
+        function displayTokens(authResponse) {
+            document.getElementById('access-token-display').value = authResponse.access_token;
+            document.getElementById('id-token-display').value = authResponse.id_token;
+            document.getElementById('token-display').style.display = 'block';
+            debugLog('🔑 Tokens displayed for copying', 'success');
+        }
+        
+        // Test manual token
+        async function testManualToken() {
+            debugLog('🧪 Testing manually entered token...', 'info');
+            const results = document.getElementById('manual-token-results');
+            const token = document.getElementById('manual-token').value.trim();
+            
+            if (!token) {
+                results.innerHTML = '<div class="error">❌ Please enter an access token</div>';
+                return;
+            }
+            
+            try {
+                debugLog('🔍 Validating manual token...', 'info');
+                
+                // Test token with Google's tokeninfo endpoint
+                const tokenInfoResponse = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${token}`);
+                
+                if (!tokenInfoResponse.ok) {
+                    throw new Error('Invalid token');
+                }
+                
+                const tokenInfo = await tokenInfoResponse.json();
+                debugLog(`✅ Token validated: ${JSON.stringify(tokenInfo)}`, 'success');
+                
+                // Test with your API
+                const validateResponse = await fetch(`${API_BASE}/api/googlehealth/validate-token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(token)
+                });
+                
+                if (validateResponse.ok) {
+                    const validateData = await validateResponse.json();
+                    results.innerHTML = `
+                        <div class="success">
+                            ✅ Manual token works!<br>
+                            📊 Scopes: ${tokenInfo.scope}<br>
+                            ⏰ Expires: ${new Date(tokenInfo.exp * 1000).toLocaleString()}<br>
+                            🎉 Ready for API testing!
+                        </div>
+                    `;
+                    
+                    // Enable API testing
+                    document.getElementById('api-test-btn').disabled = false;
+                    
+                    // Simulate successful auth for API testing
+                    currentUser = {
+                        getAuthResponse: () => ({ access_token: token })
+                    };
+                    
+                } else {
+                    throw new Error('API validation failed');
+                }
+                
+            } catch (error) {
+                debugLog(`❌ Manual token test failed: ${error}`, 'error');
+                results.innerHTML = `
+                    <div class="error">
+                        ❌ Token test failed: ${error}<br>
+                        <strong>Solutions:</strong><br>
+                        • Make sure the token is valid and not expired<br>
+                        • Get a fresh token from OAuth Playground<br>
+                        • Include the required scopes for health data
+                    </div>
+                `;
+            }
+        }
+        
+        // Check for popup blocking
+        function checkPopupBlocking() {
+            debugLog('🔍 Checking popup blocking...', 'info');
+            try {
+                const testPopup = window.open('', '_blank', 'width=1,height=1');
+                if (!testPopup || testPopup.closed || typeof testPopup.closed === 'undefined') {
+                    debugLog('❌ Popups are blocked', 'error');
+                    return false;
+                } else {
+                    testPopup.close();
+                    debugLog('✅ Popups are allowed', 'success');
+                    return true;
+                }
+            } catch (e) {
+                debugLog('❌ Popup test failed: ' + e, 'error');
+                return false;
+            }
+        }
+        
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            debugLog('🚀 OAuth Debug Tool loaded', 'info');
+            debugLog('📋 Click "Check Configuration" to start diagnosis', 'info');
+            
+            // Auto-check popup blocking
+            setTimeout(() => {
+                if (!checkPopupBlocking()) {
+                    debugLog('💡 Recommendation: Use redirect authentication instead of popup', 'warning');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

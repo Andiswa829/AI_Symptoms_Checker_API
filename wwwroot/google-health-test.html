@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Health OAuth Test - Symptoms Checker API</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .container { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 10px 0; }
+        .success { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 10px 0; }
+        .error { background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 10px 0; }
+        .info { background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin: 10px 0; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        textarea { width: 100%; font-family: monospace; font-size: 12px; }
+        pre { background: #f1f3f4; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+        .metric-card { background: white; padding: 15px; border-radius: 8px; margin: 10px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .loading { color: #6c757d; font-style: italic; }
+    </style>
+</head>
+<body>
+    <h1>🏥 Google Health OAuth Test - Symptoms Checker API</h1>
+    
+    <div class="info">
+        <strong>📋 Instructions:</strong>
+        <ol>
+            <li>Click "Sign in with Google Health" below</li>
+            <li>Grant all health permissions when prompted</li>
+            <li>Copy the tokens for API testing</li>
+            <li>Test the health data integration</li>
+        </ol>
+    </div>
+    
+    <div class="container">
+        <h3>🔑 Google OAuth Authentication</h3>
+        <div id="signin-div">
+            <button onclick="signInWithHealth()" id="signin-btn">🔑 Sign in with Google Health</button>
+            <br><br>
+            <button onclick="signInWithRedirect()" id="redirect-btn" class="btn-success">🔄 Alternative: Sign in with Redirect</button>
+            <br><br>
+            <button onclick="debugAuthState()" class="btn-success">🔍 Debug Auth State</button>
+        </div>
+        <button onclick="signOut()" id="signout-btn" style="display: none;" class="btn-danger">🚪 Sign Out</button>
+        
+        <div class="info" style="margin-top: 15px;">
+            <strong>🔧 Troubleshooting:</strong>
+            <ul>
+                <li>If popup doesn't work, try the "Alternative: Sign in with Redirect" button</li>
+                <li>Make sure to grant ALL health permissions when prompted</li>
+                <li>If sign-in fails after consent, click "Debug Auth State" to see what's wrong</li>
+                <li>Your email must be added as a test user in Google Cloud Console</li>
+                <li>Make sure popups are enabled for this site</li>
+                <li>Clear browser cookies if you see permission errors</li>
+                <li>Make sure you're added as a test user in Google Cloud Console</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div id="token-info" class="container" style="display: none;">
+        <h3>✅ OAuth Tokens</h3>
+        <div style="margin: 10px 0;">
+            <label><strong>Google Access Token (for Health API):</strong></label><br>
+            <textarea id="access-token" rows="2" readonly></textarea>
+            <button onclick="copyToClipboard('access-token')" class="btn-success">📋 Copy Access Token</button>
+        </div>
+        <div style="margin: 10px 0;">
+            <label><strong>Google ID Token (for Authentication):</strong></label><br>
+            <textarea id="id-token" rows="2" readonly></textarea>
+            <button onclick="copyToClipboard('id-token')" class="btn-success">📋 Copy ID Token</button>
+        </div>
+    </div>
+
+    <div id="api-test" class="container" style="display: none;">
+        <h3>🧪 API Integration Test</h3>
+        <button onclick="testHealthAPI()" class="btn-success">🚀 Test Health API Integration</button>
+        <button onclick="testIndividualEndpoints()" class="btn-success">📊 Test Individual Health Endpoints</button>
+        <div id="test-results"></div>
+    </div>
+
+    <div id="health-dashboard" class="container" style="display: none;">
+        <h3>📈 Your Health Dashboard</h3>
+        <div id="health-metrics"></div>
+    </div>
+
+    <script>
+        let googleAuth;
+        let currentUser;
+        let jwtToken;
+        
+        // Debug function to help troubleshoot OAuth issues
+        function debugAuthState() {
+            console.log('🔍 === DEBUG: Current Auth State ===');
+            console.log('📋 GoogleAuth object:', googleAuth);
+            
+            if (googleAuth) {
+                console.log('🔐 Is signed in:', googleAuth.isSignedIn.get());
+                
+                if (googleAuth.isSignedIn.get()) {
+                    const user = googleAuth.currentUser.get();
+                    const authResponse = user.getAuthResponse();
+                    const profile = user.getBasicProfile();
+                    
+                    console.log('👤 Current user:', profile.getName());
+                    console.log('📧 Email:', profile.getEmail());
+                    console.log('🔑 Access token (first 20 chars):', authResponse.access_token.substring(0, 20));
+                    console.log('📊 Current scopes:', authResponse.scope);
+                    console.log('⏰ Expires at:', new Date(authResponse.expires_at));
+                    
+                    // Check individual scopes
+                    const grantedScopes = authResponse.scope.split(' ');
+                    console.log('🔍 Individual scope check:');
+                    HEALTH_SCOPES_ARRAY.forEach(scope => {
+                        const granted = grantedScopes.includes(scope);
+                        console.log(`  ${granted ? '✅' : '❌'} ${scope}`);
+                    });
+                } else {
+                    console.log('❌ No user currently signed in');
+                }
+            } else {
+                console.log('❌ GoogleAuth not initialized');
+            }
+            console.log('🔍 === END DEBUG ===');
+        }
+        
+        // Required scopes for Google Health/Fit data
+        const HEALTH_SCOPES_ARRAY = [
+            'https://www.googleapis.com/auth/fitness.body.read', 
+            'https://www.googleapis.com/auth/fitness.activity.read',
+            'https://www.googleapis.com/auth/fitness.sleep.read',
+            'https://www.googleapis.com/auth/fitness.heart_rate.read',
+            'https://www.googleapis.com/auth/fitness.blood_pressure.read',
+            'https://www.googleapis.com/auth/fitness.oxygen_saturation.read'
+        ];
+        const HEALTH_SCOPES = HEALTH_SCOPES_ARRAY.join(' ');
+        
+        console.log('🔐 Required scopes:', HEALTH_SCOPES_ARRAY);
+
+        // Initialize Google API
+        function initGoogleAuth() {
+            gapi.load('auth2', function() {
+                const config = {
+                    client_id: '699206291871-pdv6amuetllvv28eplekjabbf1rsug8m.apps.googleusercontent.com',
+                    scope: HEALTH_SCOPES,
+                    redirect_uri: window.location.origin + window.location.pathname
+                };
+                
+                console.log('🔧 Initializing Google Auth with config:', config);
+                
+                googleAuth = gapi.auth2.init(config);
+                
+                console.log('✅ Google Auth initialized with health scopes');
+                console.log('🔗 Redirect URI:', window.location.origin + window.location.pathname);
+                console.log('🔐 Scopes requested:', HEALTH_SCOPES);
+                
+                // Check if we're returning from OAuth redirect
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('code') || urlParams.get('access_token')) {
+                    console.log('🔄 Processing OAuth redirect...');
+                    // Clear URL parameters
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+                
+                // Check if user is already signed in
+                if (googleAuth.isSignedIn.get()) {
+                    const user = googleAuth.currentUser.get();
+                    if (user.hasGrantedScopes(HEALTH_SCOPES)) {
+                        onSignIn(user);
+                    } else {
+                        showInfo('ℹ️ Previous sign-in detected, but health permissions may need to be re-granted.');
+                    }
+                } else {
+                    showInfo('📋 Ready to test Google Health integration! Click "Sign in with Google Health" below.');
+                }
+            }).catch(error => {
+                console.error('❌ Failed to initialize Google Auth:', error);
+                showError('Failed to initialize Google Authentication. Please refresh the page.');
+            });
+        }
+
+        // Alternative redirect-based sign-in
+        function signInWithRedirect() {
+            try {
+                console.log('🔄 Starting redirect-based sign-in...');
+                showInfo('🔄 Redirecting to Google for authentication...');
+                
+                // Construct OAuth URL manually for better control
+                const authUrl = new URL('https://accounts.google.com/oauth/v2/auth');
+                authUrl.searchParams.set('client_id', '699206291871-pdv6amuetllvv28eplekjabbf1rsug8m.apps.googleusercontent.com');
+                authUrl.searchParams.set('redirect_uri', window.location.origin + window.location.pathname);
+                authUrl.searchParams.set('response_type', 'code');
+                authUrl.searchParams.set('scope', HEALTH_SCOPES);
+                authUrl.searchParams.set('access_type', 'offline');
+                authUrl.searchParams.set('prompt', 'select_account consent');
+                
+                console.log('🌐 Redirecting to:', authUrl.toString());
+                window.location.href = authUrl.toString();
+            } catch (error) {
+                console.error('❌ Redirect sign-in error:', error);
+                showError('Failed to start redirect sign-in: ' + error.message);
+            }
+        }
+
+        // Sign in with health scopes
+        async function signInWithHealth() {
+            try {
+                console.log('🔄 Initiating Google sign-in with health scopes...');
+                console.log('🔐 Requesting scopes:', HEALTH_SCOPES_ARRAY);
+                
+                // Check if already signed in
+                if (googleAuth.isSignedIn.get()) {
+                    const user = googleAuth.currentUser.get();
+                    const authResponse = user.getAuthResponse();
+                    console.log('👤 Current user already signed in');
+                    console.log('📋 Current scopes:', authResponse.scope);
+                    
+                    // Check each scope individually
+                    const grantedScopes = authResponse.scope.split(' ');
+                    const missingScopes = HEALTH_SCOPES_ARRAY.filter(scope => !grantedScopes.includes(scope));
+                    
+                    if (missingScopes.length === 0) {
+                        console.log('✅ All required scopes already granted');
+                        onSignIn(user);
+                        return;
+                    } else {
+                        console.log('⚠️ Missing scopes:', missingScopes);
+                        console.log('🔄 Re-authenticating to get missing permissions...');
+                        await googleAuth.signOut();
+                    }
+                }
+                
+                // Show loading state
+                document.getElementById('signin-btn').innerHTML = '🔄 Opening Google Sign-in...';
+                document.getElementById('signin-btn').disabled = true;
+                
+                console.log('🚀 Calling gapi.auth2.signIn with options...');
+                const user = await googleAuth.signIn({
+                    scope: HEALTH_SCOPES,
+                    prompt: 'consent' // Always show consent screen to ensure all scopes are granted
+                });
+                
+                console.log('✅ Sign-in completed, processing user...');
+                onSignIn(user);
+            } catch (error) {
+                console.error('❌ Sign-in error:', error);
+                
+                // Reset button
+                document.getElementById('signin-btn').innerHTML = '🔑 Sign in with Google Health';
+                document.getElementById('signin-btn').disabled = false;
+                
+                let errorMessage = 'Sign-in failed: ';
+                if (error.error === 'popup_closed_by_user') {
+                    errorMessage += 'Popup was closed. Please try again and complete the sign-in process.';
+                } else if (error.error === 'access_denied') {
+                    errorMessage += 'Access denied. Please grant all required health permissions.';
+                } else if (error.error === 'invalid_scope') {
+                    errorMessage += 'Invalid permissions requested. Please contact support.';
+                } else {
+                    errorMessage += (error.error || error.message || 'Unknown error');
+                }
+                
+                showError(errorMessage);
+                
+                // Show helpful instructions
+                showInfo(`
+                    💡 <strong>Sign-in Tips:</strong><br>
+                    • Make sure popups are enabled for this site<br>
+                    • Don't close the Google sign-in window<br>
+                    • Grant all health permissions when prompted<br>
+                    • Try signing out of Google and signing back in
+                `);
+            }
+        }
+
+        // Handle successful sign-in
+        function onSignIn(googleUser) {
+            currentUser = googleUser;
+            const authResponse = googleUser.getAuthResponse();
+            const profile = googleUser.getBasicProfile();
+            
+            console.log('✅ Google Sign-In Successful!');
+            console.log('� User:', profile.getName(), '(' + profile.getEmail() + ')');
+            console.log('�📊 Granted scopes:', authResponse.scope);
+            console.log('🔑 Access Token:', authResponse.access_token.substring(0, 20) + '...');
+            
+            // Verify health scopes are granted - check each scope individually
+            const grantedScopes = authResponse.scope.split(' ');
+            const missingScopes = HEALTH_SCOPES_ARRAY.filter(scope => !grantedScopes.includes(scope));
+            
+            console.log('🔍 Scope verification:');
+            HEALTH_SCOPES_ARRAY.forEach(scope => {
+                const granted = grantedScopes.includes(scope);
+                console.log(`  ${granted ? '✅' : '❌'} ${scope}`);
+            });
+            
+            if (missingScopes.length > 0) {
+                console.error('❌ Missing required scopes:', missingScopes);
+                showError(`❌ Missing health permissions: ${missingScopes.map(s => s.split('.').pop()).join(', ')}. Please try again and accept all health permissions.`);
+                
+                // Reset UI
+                document.getElementById('signin-btn').innerHTML = '🔑 Sign in with Google Health';
+                document.getElementById('signin-btn').disabled = false;
+                return;
+            }
+            
+            // Display tokens
+            document.getElementById('access-token').value = authResponse.access_token;
+            document.getElementById('id-token').value = authResponse.id_token;
+            document.getElementById('token-info').style.display = 'block';
+            document.getElementById('api-test').style.display = 'block';
+            document.getElementById('signin-btn').style.display = 'none';
+            document.getElementById('signout-btn').style.display = 'inline-block';
+            
+            // Show user info
+            showSuccess(`✅ Successfully signed in as ${profile.getName()} (${profile.getEmail()})\\n🔐 Health permissions granted!`);
+            
+            // Auto-test API integration
+            setTimeout(testHealthAPI, 1000);
+        }
+
+        // Sign out
+        function signOut() {
+            if (googleAuth) {
+                googleAuth.signOut().then(() => {
+                    currentUser = null;
+                    jwtToken = null;
+                    document.getElementById('token-info').style.display = 'none';
+                    document.getElementById('api-test').style.display = 'none';
+                    document.getElementById('health-dashboard').style.display = 'none';
+                    document.getElementById('signin-btn').style.display = 'inline-block';
+                    document.getElementById('signout-btn').style.display = 'none';
+                    document.getElementById('test-results').innerHTML = '';
+                    document.getElementById('health-metrics').innerHTML = '';
+                    console.log('👋 User signed out');
+                    showInfo('👋 Signed out successfully');
+                });
+            }
+        }
+
+        // Copy token to clipboard
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            element.select();
+            document.execCommand('copy');
+            showSuccess('✅ Token copied to clipboard!');
+        }
+
+        // Test your Health API integration
+        async function testHealthAPI() {
+            if (!currentUser) {
+                showError('❌ Please sign in first');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<div class="loading">🔄 Testing API integration...</div>';
+            
+            const authResponse = currentUser.getAuthResponse();
+            const accessToken = authResponse.access_token;
+            const idToken = authResponse.id_token;
+            
+            const results = [];
+            
+            try {
+                // Step 1: Authenticate with your API
+                console.log('🔄 Step 1: Authenticating with Symptoms Checker API...');
+                const authResult = await fetch('http://localhost:3000/api/auth/google', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        idToken: idToken
+                    })
+                });
+                
+                const authData = await authResult.json();
+                
+                if (!authResult.ok) {
+                    throw new Error(`Authentication failed: ${authData.message || authResult.statusText}`);
+                }
+                
+                jwtToken = authData.token;
+                results.push({ step: 'API Authentication', status: 'success', data: 'JWT token received' });
+                console.log('✅ API Authentication successful');
+                
+                // Step 2: Validate Google Health token
+                console.log('🔄 Step 2: Validating Google Health token...');
+                const validateResult = await fetch('http://localhost:3000/api/googlehealth/validate-token', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(accessToken)
+                });
+                
+                const validateData = await validateResult.json();
+                results.push({ 
+                    step: 'Token Validation', 
+                    status: validateData.valid ? 'success' : 'warning',
+                    data: validateData 
+                });
+                console.log('✅ Token validation:', validateData);
+                
+                // Step 3: Test comprehensive health sync
+                console.log('🔄 Step 3: Testing comprehensive health data sync...');
+                const syncResult = await fetch('http://localhost:3000/api/googlehealth/sync', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        accessToken: accessToken,
+                        dataTypes: ['heart_rate', 'blood_pressure', 'sleep', 'activity', 'oxygen_saturation']
+                    })
+                });
+                
+                const syncData = await syncResult.json();
+                results.push({ 
+                    step: 'Health Data Sync', 
+                    status: syncResult.ok ? 'success' : 'warning',
+                    data: syncData 
+                });
+                
+                if (syncResult.ok) {
+                    console.log('✅ Health data sync successful');
+                    displayHealthDashboard(syncData);
+                } else {
+                    console.log('⚠️ Health data sync returned:', syncData);
+                }
+                
+            } catch (error) {
+                console.error('❌ API Test Error:', error);
+                results.push({ step: 'Error', status: 'error', data: error.message });
+            }
+            
+            // Display all results
+            displayTestResults(results);
+        }
+
+        // Test individual health endpoints
+        async function testIndividualEndpoints() {
+            if (!jwtToken) {
+                showError('❌ Please run main API test first');
+                return;
+            }
+            
+            const authResponse = currentUser.getAuthResponse();
+            const accessToken = authResponse.access_token;
+            
+            const endpoints = [
+                { name: 'Heart Rate', endpoint: 'heart-rate', icon: '❤️' },
+                { name: 'Blood Pressure', endpoint: 'blood-pressure', icon: '🩺' },
+                { name: 'Sleep Data', endpoint: 'sleep', icon: '😴' },
+                { name: 'Activity Data', endpoint: 'activity', icon: '🏃‍♂️' },
+                { name: 'Oxygen Saturation', endpoint: 'oxygen-saturation', icon: '🫁' }
+            ];
+            
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML += '<h4>🔍 Testing Individual Endpoints</h4>';
+            
+            for (const ep of endpoints) {
+                try {
+                    const response = await fetch(`http://localhost:3000/api/googlehealth/${ep.endpoint}?accessToken=${accessToken}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${jwtToken}`
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    const status = response.ok ? 'success' : 'warning';
+                    
+                    resultsDiv.innerHTML += `
+                        <div class="metric-card">
+                            <strong>${ep.icon} ${ep.name}:</strong> 
+                            <span style="color: ${status === 'success' ? 'green' : 'orange'}">
+                                ${response.ok ? 'Data Available' : 'No Data/Permission Needed'}
+                            </span>
+                            <details>
+                                <summary>View Response</summary>
+                                <pre>${JSON.stringify(data, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                } catch (error) {
+                    resultsDiv.innerHTML += `
+                        <div class="metric-card">
+                            <strong>${ep.icon} ${ep.name}:</strong> 
+                            <span style="color: red">Error: ${error.message}</span>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Display test results
+        function displayTestResults(results) {
+            const resultsDiv = document.getElementById('test-results');
+            let html = '<h4>🧪 API Test Results</h4>';
+            
+            results.forEach(result => {
+                const statusColor = result.status === 'success' ? 'green' : 
+                                   result.status === 'warning' ? 'orange' : 'red';
+                const statusIcon = result.status === 'success' ? '✅' : 
+                                  result.status === 'warning' ? '⚠️' : '❌';
+                
+                html += `
+                    <div class="metric-card">
+                        <strong>${statusIcon} ${result.step}:</strong>
+                        <span style="color: ${statusColor}">
+                            ${result.status.toUpperCase()}
+                        </span>
+                        <details>
+                            <summary>View Details</summary>
+                            <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                        </details>
+                    </div>
+                `;
+            });
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        // Display health dashboard
+        function displayHealthDashboard(healthData) {
+            const metricsDiv = document.getElementById('health-metrics');
+            document.getElementById('health-dashboard').style.display = 'block';
+            
+            let html = '';
+            
+            if (healthData.heartRate) {
+                html += `
+                    <div class="metric-card">
+                        <h4>❤️ Heart Rate</h4>
+                        <p><strong>Current:</strong> ${healthData.heartRate.currentHeartRate || 'N/A'} BPM</p>
+                        <p><strong>Resting:</strong> ${healthData.heartRate.restingHeartRate || 'N/A'} BPM</p>
+                        <p><strong>Readings:</strong> ${healthData.heartRate.readings?.length || 0} data points</p>
+                    </div>
+                `;
+            }
+            
+            if (healthData.sleep) {
+                html += `
+                    <div class="metric-card">
+                        <h4>😴 Sleep</h4>
+                        <p><strong>Duration:</strong> ${Math.floor((healthData.sleep.totalSleepTime || 0) / 60)}h ${(healthData.sleep.totalSleepTime || 0) % 60}m</p>
+                        <p><strong>Efficiency:</strong> ${Math.round((healthData.sleep.sleepEfficiency || 0) * 100)}%</p>
+                        <p><strong>Quality Score:</strong> ${healthData.sleep.sleepQualityScore || 'N/A'}</p>
+                    </div>
+                `;
+            }
+            
+            if (healthData.activity) {
+                html += `
+                    <div class="metric-card">
+                        <h4>🏃‍♂️ Activity</h4>
+                        <p><strong>Steps:</strong> ${healthData.activity.steps?.toLocaleString() || 'N/A'}</p>
+                        <p><strong>Distance:</strong> ${healthData.activity.distance || 'N/A'} km</p>
+                        <p><strong>Calories:</strong> ${healthData.activity.caloriesBurned || 'N/A'}</p>
+                    </div>
+                `;
+            }
+            
+            if (healthData.bloodPressure) {
+                html += `
+                    <div class="metric-card">
+                        <h4>🩺 Blood Pressure</h4>
+                        <p><strong>Latest:</strong> ${healthData.bloodPressure.latestSystolic}/${healthData.bloodPressure.latestDiastolic} mmHg</p>
+                        <p><strong>Category:</strong> ${healthData.bloodPressure.category}</p>
+                    </div>
+                `;
+            }
+            
+            if (!html) {
+                html = '<div class="info">ℹ️ No health data available. This could mean:<ul><li>No health data in your Google Fit account</li><li>Data exists but outside the requested date range</li><li>Additional permissions may be needed</li></ul></div>';
+            }
+            
+            metricsDiv.innerHTML = html;
+        }
+
+        // Utility functions for displaying messages
+        function showSuccess(message) {
+            const div = document.createElement('div');
+            div.className = 'success';
+            div.innerHTML = message.replace(/\\n/g, '<br>');
+            document.body.insertBefore(div, document.body.firstChild);
+            setTimeout(() => div.remove(), 5000);
+        }
+        
+        function showError(message) {
+            const div = document.createElement('div');
+            div.className = 'error';
+            div.innerHTML = message;
+            document.body.insertBefore(div, document.body.firstChild);
+            setTimeout(() => div.remove(), 8000);
+        }
+        
+        function showInfo(message) {
+            const div = document.createElement('div');
+            div.className = 'info';
+            div.innerHTML = message;
+            document.body.insertBefore(div, document.body.firstChild);
+            setTimeout(() => div.remove(), 4000);
+        }
+
+        // Check if popups are blocked
+        function checkPopupBlocking() {
+            try {
+                const testPopup = window.open('', '_blank', 'width=1,height=1');
+                if (!testPopup || testPopup.closed || typeof testPopup.closed === 'undefined') {
+                    showError(`
+                        🚫 <strong>Popup Blocked!</strong><br>
+                        Please enable popups for this site, or use the "Alternative: Sign in with Redirect" button.
+                    `);
+                    return false;
+                } else {
+                    testPopup.close();
+                    return true;
+                }
+            } catch (e) {
+                return false;
+            }
+        }
+
+        // Enhanced sign-in with popup check
+        async function signInWithHealthEnhanced() {
+            // Check popup blocking first
+            if (!checkPopupBlocking()) {
+                showInfo('💡 Popup blocked. Please use the "Alternative: Sign in with Redirect" button instead.');
+                return;
+            }
+            
+            await signInWithHealth();
+        }
+
+        // Initialize when page loads
+        window.onload = function() {
+            console.log('🔄 Initializing Google Health OAuth Test...');
+            
+            // Update button to use enhanced sign-in
+            document.getElementById('signin-btn').onclick = signInWithHealthEnhanced;
+            
+            initGoogleAuth();
+            
+            // Check if we need to show specific guidance
+            setTimeout(() => {
+                if (!googleAuth || !googleAuth.isSignedIn.get()) {
+                    showInfo(`
+                        📋 <strong>Ready to test Google Health integration!</strong><br>
+                        🔗 Make sure your API is running on <a href="http://localhost:3000" target="_blank">http://localhost:3000</a><br>
+                        📱 You'll need health data in your Google Fit account for meaningful results<br><br>
+                        <strong>⚠️ Important:</strong> Make sure you're added as a test user in Google Cloud Console!
+                    `);
+                }
+            }, 2000);
+        };
+    </script>
+</body>
+</html>

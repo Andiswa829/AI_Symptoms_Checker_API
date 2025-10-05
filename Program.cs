@@ -58,6 +58,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddHttpClient(); // For Google token validation
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+builder.Services.AddScoped<IGoogleHealthService, GoogleHealthService>();
 builder.Services.AddScoped<ISymptomAnalysisService, SymptomAnalysisService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IHealthDataService, HealthDataService>();
@@ -84,14 +85,15 @@ builder.Services.AddSwaggerGen(c =>
     { 
         Title = "Symptoms Checker API", 
         Version = "v1",
-        Description = @"## 🏥 Comprehensive Healthcare API with Google OAuth Integration
+        Description = @"## 🏥 Comprehensive Healthcare API with Google OAuth & Google Health Integration
         
 **Key Features:**
 • 🔐 JWT & Google OAuth Authentication
+• 📊 Google Health/Fit API Integration
 • 🤒 AI-powered symptom analysis
 • 📅 Appointment booking system
 • 👨‍⚕️ Doctor directory with search
-• 📊 Personal health data management
+• � Personal health data management
 • 🚨 Disease outbreak alerts and tracking
         
 **🔑 Authentication Methods:**
@@ -104,6 +106,13 @@ builder.Services.AddSwaggerGen(c =>
 • Call /api/auth/google endpoint with the token
 • Receive JWT token for subsequent API calls
 • Google Client ID: 699206291871-pdv6amuetllvv28eplekjabbf1rsug8m.apps.googleusercontent.com
+        
+**📊 Google Health Integration:**
+• Sync comprehensive health data from Google Health/Fit
+• Access heart rate, blood pressure, SpO2, temperature data
+• Retrieve sleep analysis and activity tracking
+• Monitor stress levels and respiratory metrics
+• Required Google OAuth scopes: fitness.read, fitness.body.read, fitness.activity.read, fitness.sleep.read
         
 **🔒 Security**: Most endpoints require JWT authentication (🔒 icon)"
     });

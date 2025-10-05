@@ -5,13 +5,27 @@ A comprehensive ASP.NET Core Web API for healthcare applications with Google OAu
 ## ✨ Features
 
 - 🔐 **Authentication & Authorization**: JWT + Google OAuth 2.0 integration
+- 📊 **Google Health Integration**: Comprehensive Google Fit/Health API integration
 - 🤖 **AI-Powered Symptom Analysis**: Intelligent health assessment system
 - 📅 **Appointment Management**: Book, view, and cancel medical appointments
 - 👨‍⚕️ **Doctor Directory**: Search doctors by specialization and location
-- 📊 **Health Data Management**: Secure personal health information storage
+- � **Health Data Management**: Secure personal health information storage
 - 🚨 **Disease Outbreak Alerts**: Real-time outbreak notifications and tracking
 - 📖 **Comprehensive API Documentation**: Interactive Swagger UI
 - 🏗️ **Modern Architecture**: Clean architecture with Entity Framework Core
+
+### 🏥 Google Health Integration
+
+- ❤️ **Heart Rate Monitoring**: Real-time and historical heart rate data
+- 🩺 **Blood Pressure Tracking**: Systolic/diastolic readings with medical categorization
+- 🫁 **Oxygen Saturation**: SpO2 measurements and normal range indicators
+- 🌡️ **Body Temperature**: Temperature readings and fever detection
+- 😴 **Sleep Analysis**: Sleep duration, quality, stages, and efficiency metrics
+- 🏃‍♂️ **Activity Tracking**: Steps, distance, calories, and exercise sessions
+- 😰 **Stress Level Monitoring**: Estimated stress levels from HRV analysis
+- 🔄 **Comprehensive Sync**: All health metrics in one API call
+
+*See [Google Health Integration Guide](GOOGLE_HEALTH_INTEGRATION.md) for detailed documentation.*
 
 ## 🚀 Quick Start
 
@@ -102,6 +116,21 @@ A comprehensive ASP.NET Core Web API for healthcare applications with Google OAu
 |--------|----------|-------------|
 | GET | `/api/outbreaks/active` | Active outbreaks |
 | GET | `/api/outbreaks/symptoms/{symptom}` | Outbreaks by symptom |
+
+### Google Health Integration 🆕
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/googlehealth/sync` | 📊 Sync all health data from Google Health |
+| GET | `/api/googlehealth/heart-rate` | ❤️ Get heart rate data |
+| GET | `/api/googlehealth/blood-pressure` | 🩺 Get blood pressure readings |
+| GET | `/api/googlehealth/oxygen-saturation` | 🫁 Get SpO2 measurements |
+| GET | `/api/googlehealth/body-temperature` | 🌡️ Get body temperature data |
+| GET | `/api/googlehealth/sleep` | 😴 Get sleep analysis |
+| GET | `/api/googlehealth/activity` | 🏃‍♂️ Get activity and fitness data |
+| GET | `/api/googlehealth/stress-level` | 😰 Get stress level analysis |
+| POST | `/api/googlehealth/validate-token` | 🔐 Validate Google Health token |
+
+*📚 See [Google Health Integration Guide](GOOGLE_HEALTH_INTEGRATION.md) for detailed documentation and examples.*
 
 ## 🔧 Configuration
 
@@ -509,5 +538,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Disclaimer
 
-This application is for educational and informational purposes only. It should not be used as a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.#   s y m p t o m s _ c h e c k e r _ a p i  
+This application is for educational and informational purposes only. It should not be used as a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.#   s y m p t o m s _ c h e c k e r _ a p i 
+ 
  
