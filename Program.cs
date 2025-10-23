@@ -193,53 +193,95 @@ static async Task SeedDatabase(ApplicationDbContext context)
         var doctors = new[]
         {
             new Doctor
-            {
-                FirstName = "John",
-                LastName = "Smith",
-                Specialization = "General Practice",
-                Email = "john.smith@clinic.com",
-                PhoneNumber = "(555) 123-4567",
-                Address = "123 Main St",
-                City = "New York",
-                State = "NY",
-                ZipCode = "10001",
-                Biography = "Experienced general practitioner with 15 years of experience.",
-                YearsOfExperience = 15,
-                Rating = 4.8m,
-                IsAvailable = true
-            },
-            new Doctor
-            {
-                FirstName = "Sarah",
-                LastName = "Johnson",
-                Specialization = "Cardiology",
-                Email = "sarah.johnson@heartcenter.com",
-                PhoneNumber = "(555) 234-5678",
-                Address = "456 Heart Ave",
-                City = "Los Angeles",
-                State = "CA",
-                ZipCode = "90210",
-                Biography = "Board-certified cardiologist specializing in preventive care.",
-                YearsOfExperience = 12,
-                Rating = 4.9m,
-                IsAvailable = true
-            },
-            new Doctor
-            {
-                FirstName = "Michael",
-                LastName = "Brown",
-                Specialization = "Pediatrics",
-                Email = "michael.brown@kidsclinic.com",
-                PhoneNumber = "(555) 345-6789",
-                Address = "789 Children Way",
-                City = "Chicago",
-                State = "IL",
-                ZipCode = "60601",
-                Biography = "Dedicated pediatrician with expertise in child development.",
-                YearsOfExperience = 8,
-                Rating = 4.7m,
-                IsAvailable = true
-            }
+        {
+           // Id = 1,
+            FirstName = "Sarah",
+            LastName = "van der Merwe",
+            Specialization = "General Practitioner",
+            Email = "sarah.vandermerwe@example.com",
+            PhoneNumber = "0123456789",
+            Address = "45 Jan Smuts Avenue",
+            City = "Rosebank",
+            Province = "Gauteng",
+            PostalCode = "2196",
+            YearsOfExperience = 10,
+            Rating = 4.6m,
+            IsAvailable = true,
+            Latitude = -26.1467,
+            Longitude = 28.0416
+        },
+        new Doctor
+        {
+           // Id = 2,
+            FirstName = "Thabo",
+            LastName = "Moleketi",
+            Specialization = "Pediatrics",
+            Email = "thabo.moleketi@example.com",
+            PhoneNumber = "0987654321",
+            Address = "210 Oxford Road",
+            City = "Illovo",
+            Province = "Gauteng",
+            PostalCode = "2196",
+            YearsOfExperience = 8,
+            Rating = 4.8m,
+            IsAvailable = true,
+            Latitude = -26.1363,
+            Longitude = 28.0544
+        },
+        new Doctor
+        {
+         //   Id = 3,
+            FirstName = "Fatima",
+            LastName = "Patel",
+            Specialization = "Cardiology",
+            Email = "fatima.patel@example.com",
+            PhoneNumber = "0112233445",
+            Address = "17 Baker Street",
+            City = "Sandton",
+            Province = "Gauteng",
+            PostalCode = "2196",
+            YearsOfExperience = 12,
+            Rating = 4.7m,
+            IsAvailable = true,
+            Latitude = -26.1052,
+            Longitude = 28.0560
+        },
+        new Doctor
+        {
+           // Id = 4,
+            FirstName = "Sipho",
+            LastName = "Nkosi",
+            Specialization = "Dermatology",
+            Email = "sipho.nkosi@example.com",
+            PhoneNumber = "0119988776",
+            Address = "12 Vilakazi Street",
+            City = "Soweto",
+            Province = "Gauteng",
+            PostalCode = "1804",
+            YearsOfExperience = 15,
+            Rating = 4.5m,
+            IsAvailable = true,
+            Latitude = -26.2385,
+            Longitude = 27.9087
+        },
+        new Doctor
+        {
+           // Id = 5,
+            FirstName = "Lindiwe",
+            LastName = "Khumalo",
+            Specialization = "Orthopedics",
+            Email = "lindiwe.khumalo@example.com",
+            PhoneNumber = "0113344556",
+            Address = "78 Chris Hani Road",
+            City = "Soweto",
+            Province = "Gauteng",
+            PostalCode = "1804",
+            YearsOfExperience = 20,
+            Rating = 4.9m,
+            IsAvailable = true,
+            Latitude = -26.2678,
+            Longitude = 27.8657
+        }
         };
         
         context.Doctors.AddRange(doctors);

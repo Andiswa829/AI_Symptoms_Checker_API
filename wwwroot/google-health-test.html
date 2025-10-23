@@ -367,7 +367,7 @@
             try {
                 // Step 1: Authenticate with your API
                 console.log('🔄 Step 1: Authenticating with Symptoms Checker API...');
-                const authResult = await fetch('http://localhost:3000/api/auth/google', {
+                const authResult = await fetch('http://localhost:7125/api/auth/google', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -389,7 +389,7 @@
                 
                 // Step 2: Validate Google Health token
                 console.log('🔄 Step 2: Validating Google Health token...');
-                const validateResult = await fetch('http://localhost:3000/api/googlehealth/validate-token', {
+                const validateResult = await fetch('http://localhost:7125/api/googlehealth/validate-token', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${jwtToken}`,
@@ -408,7 +408,7 @@
                 
                 // Step 3: Test comprehensive health sync
                 console.log('🔄 Step 3: Testing comprehensive health data sync...');
-                const syncResult = await fetch('http://localhost:3000/api/googlehealth/sync', {
+                const syncResult = await fetch('http://localhost:7125/api/googlehealth/sync', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${jwtToken}`,
@@ -466,7 +466,7 @@
             
             for (const ep of endpoints) {
                 try {
-                    const response = await fetch(`http://localhost:3000/api/googlehealth/${ep.endpoint}?accessToken=${accessToken}`, {
+                    const response = await fetch(`http://localhost:7125/api/googlehealth/${ep.endpoint}?accessToken=${accessToken}`, {
                         method: 'GET',
                         headers: {
                             'Authorization': `Bearer ${jwtToken}`
@@ -653,7 +653,7 @@
                 if (!googleAuth || !googleAuth.isSignedIn.get()) {
                     showInfo(`
                         📋 <strong>Ready to test Google Health integration!</strong><br>
-                        🔗 Make sure your API is running on <a href="http://localhost:3000" target="_blank">http://localhost:3000</a><br>
+                        🔗 Make sure your API is running on <a href="http://localhost:7125" target="_blank">http://localhost:7125</a><br>
                         📱 You'll need health data in your Google Fit account for meaningful results<br><br>
                         <strong>⚠️ Important:</strong> Make sure you're added as a test user in Google Cloud Console!
                     `);

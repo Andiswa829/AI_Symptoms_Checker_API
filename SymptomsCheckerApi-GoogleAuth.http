@@ -2,7 +2,7 @@
 # Make sure to replace the values below with actual test data
 
 ### 1. Test regular registration (baseline)
-POST http://localhost:3000/api/auth/register
+POST http://localhost:7125/api/auth/register
 Content-Type: application/json
 
 {
@@ -16,7 +16,7 @@ Content-Type: application/json
 }
 
 ### 2. Test regular login (baseline)
-POST http://localhost:3000/api/auth/login
+POST http://localhost:7125/api/auth/login
 Content-Type: application/json
 
 {
@@ -28,7 +28,7 @@ Content-Type: application/json
 ### 3. Test Google Authentication
 # NOTE: You need to get a real Google ID token from the frontend
 # This is just a template - replace with actual token from Google Sign-In
-POST http://localhost:3000/api/auth/google
+POST http://localhost:7125/api/auth/google
 Content-Type: application/json
 
 {
@@ -40,7 +40,7 @@ Content-Type: application/json
 }
 
 ### 4. Test External Authentication (Generic)
-POST http://localhost:3000/api/auth/external
+POST http://localhost:7125/api/auth/external
 Content-Type: application/json
 
 {
@@ -54,12 +54,12 @@ Content-Type: application/json
 
 ### 5. Test authenticated endpoint with Google user
 # Use the JWT token from the Google auth response
-GET http://localhost:3000/api/symptoms/history
+GET http://localhost:7125/api/symptoms/history
 Authorization: Bearer YOUR_JWT_TOKEN_HERE
 
 ### 6. Test Google auth with existing email
 # First create a user with email/password, then try Google auth with same email
-POST http://localhost:3000/api/auth/register
+POST http://localhost:7125/api/auth/register
 Content-Type: application/json
 
 {
@@ -73,7 +73,7 @@ Content-Type: application/json
 
 ###
 # Then try Google auth with the same email
-POST http://localhost:3000/api/auth/google
+POST http://localhost:7125/api/auth/google
 Content-Type: application/json
 
 {

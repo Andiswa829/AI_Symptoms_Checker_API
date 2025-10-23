@@ -73,8 +73,8 @@ A comprehensive ASP.NET Core Web API for healthcare applications with Google OAu
    ```
 
 6. **Access the API**
-   - Swagger UI: `http://localhost:3000`
-   - API Base: `http://localhost:3000/api`
+   - Swagger UI: `http://localhost:7125`
+   - API Base: `http://localhost:7125/api`
 
 ## 📚 API Endpoints
 

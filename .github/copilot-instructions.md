@@ -48,4 +48,4 @@ This ASP.NET Core Web API project for a Symptoms Checker application has been su
 - CORS Support for Frontend Integration
 
 ### 🌐 Running the Application
-The API is currently running on `http://localhost:5063` with Swagger UI available at the root URL for interactive API testing.
+The API is currently running on `http://localhost:7125` with Swagger UI available at the root URL for interactive API testing.

@@ -1,8 +1,8 @@
 ### Google Health API Integration Test
-### Base URL: http://localhost:3000
+### Base URL: http://localhost:7125
 
 ### Variables
-@baseUrl = http://localhost:3000
+@baseUrl = http://localhost:7125
 @accessToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 @googleToken = ya29.a0AfH6SMC...
 

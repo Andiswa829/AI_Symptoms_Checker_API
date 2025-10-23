@@ -161,7 +161,7 @@ public class AppointmentService : IAppointmentService
         if (!string.IsNullOrEmpty(location))
         {
             query = query.Where(d => d.City != null && d.City.Contains(location) || 
-                                   d.State != null && d.State.Contains(location));
+                                   d.Province != null && d.Province.Contains(location));
         }
 
         return await query.OrderByDescending(d => d.Rating).ToListAsync();

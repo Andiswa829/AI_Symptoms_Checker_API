@@ -160,7 +160,7 @@ const REQUIRED_SCOPES = [
 - Comprehensive error handling
 - Complete documentation
 - Test files created
-- Running on http://localhost:3000
+- Running on http://localhost:7125
 
 #### 🔄 **Ready for Integration:**
 - Frontend can now integrate with Google Health API
@@ -194,7 +194,7 @@ const REQUIRED_SCOPES = [
 - **[Google Health Integration Guide](GOOGLE_HEALTH_INTEGRATION.md)** - Complete documentation with examples
 - **[Test Suite](SymptomsCheckerApi-GoogleHealth.http)** - Ready-to-use API tests
 - **[Updated README](README.md)** - Project overview with new features
-- **Interactive Swagger UI** - Available at http://localhost:3000
+- **Interactive Swagger UI** - Available at http://localhost:7125
 
 ---
 

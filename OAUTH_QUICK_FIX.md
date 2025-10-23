@@ -14,7 +14,7 @@ Based on your console errors, you're experiencing:
 
 I've created a step-by-step debugging tool for you:
 
-1. **Open**: http://localhost:3000/oauth-debug.html
+1. **Open**: http://localhost:7125/oauth-debug.html
 2. **Follow each step** - it will identify exactly what's wrong
 3. **Get specific fixes** for your exact issue
 
@@ -75,7 +75,7 @@ I've created a step-by-step debugging tool for you:
 
 ### **Step 1: Use the Debug Tool**
 ```
-URL: http://localhost:3000/oauth-debug.html
+URL: http://localhost:7125/oauth-debug.html
 Purpose: Identifies exact problem step-by-step
 ```
 
@@ -107,7 +107,7 @@ After fixes, you should see:
 #### **Option A: Try Different Browser**
 ```
 1. Open Chrome Incognito or Firefox Private
-2. Go to: http://localhost:3000/oauth-debug.html  
+2. Go to: http://localhost:7125/oauth-debug.html  
 3. Complete the debug process
 ```
 
@@ -121,7 +121,7 @@ chrome --disable-web-security --disable-features=VizDisplayCompositor --user-dat
 ```
 1. Open phone browser
 2. Connect to your laptop's IP
-3. Go to: http://[YOUR_IP]:3000/oauth-debug.html
+3. Go to: http://[YOUR_IP]:5063/oauth-debug.html
 ```
 
 ## 🎯 **Success Indicators**
@@ -135,7 +135,7 @@ You'll know it's working when:
 
 ## 📞 **Next Steps**
 
-1. **First**: Try the debug tool: http://localhost:3000/oauth-debug.html
+1. **First**: Try the debug tool: http://localhost:7125/oauth-debug.html
 2. **Report**: What step fails in the debug tool  
 3. **Fix**: Apply the specific solution it suggests
 

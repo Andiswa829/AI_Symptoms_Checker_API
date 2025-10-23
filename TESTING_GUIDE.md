@@ -9,12 +9,12 @@ The Google Health integration requires **real Google OAuth tokens** with fitness
 ### Test if the API is responding:
 ```bash
 # Test basic API health
-curl http://localhost:3000/api/auth/register -X POST -H "Content-Type: application/json" -d "{\"email\":\"test@test.com\",\"password\":\"Test123!\",\"firstName\":\"Test\",\"lastName\":\"User\"}"
+curl http://localhost:7125/api/auth/register -X POST -H "Content-Type: application/json" -d "{\"email\":\"test@test.com\",\"password\":\"Test123!\",\"firstName\":\"Test\",\"lastName\":\"User\"}"
 ```
 
 ## 🌐 **Method 2: Swagger UI Testing (Easiest)**
 
-1. **Open Swagger UI**: http://localhost:3000
+1. **Open Swagger UI**: http://localhost:7125
 2. **Find Google Health Section**: Scroll down to "GoogleHealth" endpoints
 3. **Test Authentication Flow**:
    - First test `/api/auth/register` or `/api/auth/login`
@@ -32,7 +32,7 @@ curl http://localhost:3000/api/auth/register -X POST -H "Content-Type: applicati
 
 #### **Step 1: Get JWT Token**
 ```http
-POST http://localhost:3000/api/auth/register
+POST http://localhost:7125/api/auth/register
 Content-Type: application/json
 
 {
@@ -69,7 +69,7 @@ console.log('Google Access Token:', accessToken);
 #### **Step 3: Test Google Health Endpoints**
 ```http
 # Validate the Google token first
-POST http://localhost:3000/api/googlehealth/validate-token
+POST http://localhost:7125/api/googlehealth/validate-token
 Authorization: Bearer YOUR_JWT_TOKEN
 Content-Type: application/json
 
@@ -81,7 +81,7 @@ Content-Type: application/json
 ### Collection Setup:
 1. **Create new Postman collection**: "Google Health API"
 2. **Add environment variables**:
-   - `baseUrl`: `http://localhost:3000`
+  - `baseUrl`: `http://localhost:7125`
    - `jwtToken`: (get from login endpoint)
    - `googleToken`: (get from Google OAuth)
 
@@ -98,12 +98,12 @@ Since getting real Google tokens can be complex, let's test the API structure:
 ### Test Authentication Layer:
 ```bash
 # 1. Register user
-curl -X POST http://localhost:3000/api/auth/register \
+curl -X POST http://localhost:7125/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"healthtest@example.com","password":"Test123!","firstName":"Health","lastName":"Tester"}'
 
 # 2. Login and get JWT
-curl -X POST http://localhost:3000/api/auth/login \
+curl -X POST http://localhost:7125/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"healthtest@example.com","password":"Test123!"}'
 ```
@@ -111,13 +111,13 @@ curl -X POST http://localhost:3000/api/auth/login \
 ### Test Google Health Endpoints (will return 400/401 without valid tokens):
 ```bash
 # Test token validation (expects 400 with invalid token)
-curl -X POST http://localhost:3000/api/googlehealth/validate-token \
+curl -X POST http://localhost:7125/api/googlehealth/validate-token \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '"invalid_token"'
 
 # Test heart rate endpoint (expects 400 without valid Google token)
-curl -X GET "http://localhost:3000/api/googlehealth/heart-rate?accessToken=invalid_token" \
+curl -X GET "http://localhost:7125/api/googlehealth/heart-rate?accessToken=invalid_token" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -209,7 +209,7 @@ Since Google Fit requires real user data, you can:
 
 ## 🎯 **Production Testing Checklist**
 
-- ✅ **API Running**: http://localhost:3000 ✓
+- ✅ **API Running**: http://localhost:7125 ✓
 - ✅ **Endpoints Exist**: 9 Google Health endpoints ✓
 - ✅ **Authentication**: JWT + Google OAuth ✓
 - ✅ **Error Handling**: Proper HTTP status codes ✓
