@@ -108,6 +108,7 @@ public class AuthController : ControllerBase
                 Token = token,
                 RefreshToken = refreshToken,
                 Expiration = DateTime.UtcNow.AddDays(7),
+                ExternalProvider = user.ExternalProvider ?? string.Empty,
                 User = new UserDto
                 {
                     Id = user.Id,

@@ -7,6 +7,7 @@ public class AuthResponse
     public DateTime Expiration { get; set; }
     public UserDto User { get; set; } = null!;
     public bool IsNewUser { get; set; } = false;
+    public string? ExternalProvider { get; set; }
 }
 
 public class UserDto

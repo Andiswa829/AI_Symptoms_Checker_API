@@ -158,6 +158,7 @@ public class GoogleAuthService : IGoogleAuthService
                 RefreshToken = refreshToken,
                 Expiration = DateTime.UtcNow.AddDays(7),
                 IsNewUser = isNewUser,
+                ExternalProvider = existingUser.ExternalProvider,
                 User = new UserDto
                 {
                     Id = existingUser.Id,
