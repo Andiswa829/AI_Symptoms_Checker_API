@@ -151,7 +151,7 @@ public class GoogleAuthService : IGoogleAuthService
             // Generate JWT token
             var token = _jwtService.GenerateToken(existingUser);
             var refreshToken = _jwtService.GenerateRefreshToken();
-
+            //
             return new AuthResponse
             {
                 Token = token,
