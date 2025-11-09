@@ -139,13 +139,22 @@ public class AuthController : ControllerBase
     /// 
     /// 1. **Frontend Setup**: Implement Google Sign-In in your frontend application
     /// 2. **Get ID Token**: User signs in with Google and you receive an ID token
-    /// 3. **API Call**: Send the ID token to this endpoint
-    /// 4. **Response**: Receive JWT token for API authentication
+    /// 3. **Get Access Token** (Optional): For health data access, also obtain an access token with fitness scopes
+    /// 4. **API Call**: Send both tokens to this endpoint for authentication
+    /// 
+    /// **🔑 Required Scopes for Health Data:**
+    /// - `https://www.googleapis.com/auth/fitness.body.read` - Body measurements
+    /// - `https://www.googleapis.com/auth/fitness.activity.read` - Activity data  
+    /// - `https://www.googleapis.com/auth/fitness.sleep.read` - Sleep data
+    /// - `https://www.googleapis.com/auth/fitness.heart_rate.read` - Heart rate
+    /// - `https://www.googleapis.com/auth/fitness.blood_pressure.read` - Blood pressure
+    /// - `https://www.googleapis.com/auth/fitness.oxygen_saturation.read` - SpO2
     /// 
     /// **📝 Example Request:**
     /// ```json
     /// {
     ///   "idToken": "eyJhbGciOiJSUzI1NiIs...",
+    ///   "accessToken": "ya29.a0AfH6SMC7X2vjf8nP9gK...", // For health data access
     ///   "email": "user@gmail.com",
     ///   "firstName": "John",
     ///   "lastName": "Doe",
@@ -158,9 +167,9 @@ public class AuthController : ControllerBase
     /// **⚠️ Note**: The ID token must be obtained from Google's authentication service on the frontend.
     /// You cannot test this directly in Swagger without a real Google ID token from the frontend.
     /// </remarks>
-    /// <param name="request">Google authentication request with ID token and user info</param>
-    /// <returns>JWT authentication response with user details</returns>
-    /// <response code="200">✅ Authentication successful - returns JWT token</response>
+    /// <param name="request">Google authentication request with ID token, optional access token, and user info</param>
+    /// <returns>JWT authentication response with user details and optional Google access token</returns>
+    /// <response code="200">✅ Authentication successful - returns JWT token and Google access token</response>
     /// <response code="400">❌ Invalid request or malformed ID token</response>
     /// <response code="401">🚫 Invalid Google ID token</response>
     /// <response code="500">💥 Internal server error</response>
@@ -200,12 +209,22 @@ public class AuthController : ControllerBase
     /// {
     ///   "provider": "google",
     ///   "idToken": "eyJhbGciOiJSUzI1NiIs...",
+    ///   "accessToken": "ya29.a0AfH6SMC7X2vjf8nP9gK...", 
     ///   "email": "user@gmail.com", 
     ///   "firstName": "John",
     ///   "lastName": "Doe",
     ///   "picture": "https://lh3.googleusercontent.com/a/default-user=s96-c"
     /// }
     /// ```
+    /// 
+    /// **🔑 For Google Health Data Access:**
+    /// Include `accessToken` with the following scopes:
+    /// - `https://www.googleapis.com/auth/fitness.body.read`
+    /// - `https://www.googleapis.com/auth/fitness.activity.read`
+    /// - `https://www.googleapis.com/auth/fitness.sleep.read`
+    /// - `https://www.googleapis.com/auth/fitness.heart_rate.read`
+    /// - `https://www.googleapis.com/auth/fitness.blood_pressure.read`
+    /// - `https://www.googleapis.com/auth/fitness.oxygen_saturation.read`
     /// 
     /// **🔌 Supported Providers:**
     /// - `google` - Google OAuth 2.0
@@ -228,6 +247,7 @@ public class AuthController : ControllerBase
                 var googleRequest = new GoogleAuthRequest
                 {
                     IdToken = request.IdToken,
+                    AccessToken = request.AccessToken, // Pass through the access token
                     Email = request.Email,
                     FirstName = request.FirstName,
                     LastName = request.LastName,

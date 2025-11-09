@@ -494,12 +494,31 @@ public class GoogleHealthService : IGoogleHealthService
     {
         try
         {
-            // Validate token by making a simple API call
+            _logger.LogInformation("Validating Google Health access token");
+            
+            // First, check if the token is valid by making a simple userinfo call
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+            
+            var userInfoResponse = await _httpClient.GetAsync("https://www.googleapis.com/oauth2/v2/userinfo");
+            if (!userInfoResponse.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Token validation failed at userinfo endpoint. Status: {StatusCode}", userInfoResponse.StatusCode);
+                return false;
+            }
+
+            // Then validate token by making a simple API call to Google Fit
             var service = CreateFitnessService(accessToken);
             var request = service.Users.DataSources.List("me");
             var response = await request.ExecuteAsync();
             
+            _logger.LogInformation("Google Health token validation successful. Found {DataSourceCount} data sources", response.DataSource?.Count ?? 0);
             return response != null;
+        }
+        catch (Google.GoogleApiException ex)
+        {
+            _logger.LogError(ex, "Google API error during token validation. Status: {StatusCode}, Message: {Message}", ex.HttpStatusCode, ex.Message);
+            return false;
         }
         catch (Exception ex)
         {

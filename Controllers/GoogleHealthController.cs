@@ -90,7 +90,19 @@ public class GoogleHealthController : ControllerBase
             var isValidToken = await _googleHealthService.ValidateHealthTokenAsync(request.AccessToken);
             if (!isValidToken)
             {
-                return BadRequest(new { message = "Invalid or expired Google Health access token" });
+                return BadRequest(new { 
+                    message = "Invalid or expired Google Health access token",
+                    details = "Please ensure you have a valid Google OAuth access token with the required fitness scopes",
+                    requiredScopes = new[]
+                    {
+                        "https://www.googleapis.com/auth/fitness.activity.read",
+                        "https://www.googleapis.com/auth/fitness.body.read",
+                        "https://www.googleapis.com/auth/fitness.sleep.read",
+                        "https://www.googleapis.com/auth/fitness.heart_rate.read",
+                        "https://www.googleapis.com/auth/fitness.blood_pressure.read",
+                        "https://www.googleapis.com/auth/fitness.oxygen_saturation.read"
+                    }
+                });
             }
 
             _logger.LogInformation("Syncing Google Health data for user {UserId}", userId);

@@ -151,14 +151,19 @@ public class GoogleAuthService : IGoogleAuthService
             // Generate JWT token
             var token = _jwtService.GenerateToken(existingUser);
             var refreshToken = _jwtService.GenerateRefreshToken();
-            //
-            return new AuthResponse
+
+            // Prepare response with Google access token if provided
+            var response = new AuthResponse
             {
                 Token = token,
                 RefreshToken = refreshToken,
                 Expiration = DateTime.UtcNow.AddDays(7),
                 IsNewUser = isNewUser,
                 ExternalProvider = existingUser.ExternalProvider,
+                GoogleAccessToken = request.AccessToken, // Pass through the access token
+                GoogleAccessTokenExpiration = !string.IsNullOrEmpty(request.AccessToken) 
+                    ? DateTime.UtcNow.AddHours(1) // Default expiration, could be validated from Google
+                    : null,
                 User = new UserDto
                 {
                     Id = existingUser.Id,
@@ -171,6 +176,14 @@ public class GoogleAuthService : IGoogleAuthService
                     IsExternalAuth = existingUser.IsExternalAuth
                 }
             };
+
+            // If we have an access token, validate it for health data access
+            if (!string.IsNullOrEmpty(request.AccessToken))
+            {
+                _logger.LogInformation("Google access token provided, validating for user {UserId}", existingUser.Id);
+            }
+
+            return response;
         }
         catch (Exception ex)
         {

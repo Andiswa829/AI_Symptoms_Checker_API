@@ -39,13 +39,14 @@ Content-Type: application/json
   "picture": "https://lh3.googleusercontent.com/a/default-user=s96-c"
 }
 
-### 4. Test External Authentication (Generic)
+### 4. Test External Authentication (Generic) - Updated with Access Token
 POST http://localhost:7125/api/auth/external
 Content-Type: application/json
 
 {
   "provider": "google",
   "idToken": "YOUR_GOOGLE_ID_TOKEN_HERE",
+  "accessToken": "YOUR_GOOGLE_ACCESS_TOKEN_HERE",
   "email": "john.doe@gmail.com",
   "firstName": "John",
   "lastName": "Doe",
