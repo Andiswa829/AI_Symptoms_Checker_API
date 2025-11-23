@@ -26,6 +26,19 @@ public class Appointment
     public Doctor Doctor { get; set; } = null!;
 }
 
+public class AppointmentBooking
+{
+    public DateTime Date { get; set; }           // e.g., "2025-11-28"
+    public string Time { get; set; }             // e.g., "16:00"
+    public string DoctorId { get; set; }         // e.g., "7"
+    public string PatientName { get; set; }      // e.g., "Mini Dlamini"
+    public string PatientEmail { get; set; }     // e.g., "mini@email.com"
+    public string PatientPhone { get; set; }     // e.g., "+27892234454"
+    public string Reason { get; set; }           // e.g., "Consultation regarding"
+    public string Notes { get; set; }            // e.g., ""
+    public List<string> Symptoms { get; set; }   // e.g., []
+}
+
 public enum AppointmentStatus
 {
     Scheduled,

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SymptomsCheckerApi.DTOs.Appointments;
 using SymptomsCheckerApi.Models;
 using SymptomsCheckerApi.Services.Interfaces;
 
@@ -22,7 +23,7 @@ public class DoctorsController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<List<Doctor>>> SearchDoctors(
+    public async Task<ActionResult<List<DoctorDto>>> SearchDoctors(
         [FromQuery] string? specialization = null,
         [FromQuery] string? location = null)
     {
@@ -35,6 +36,45 @@ public class DoctorsController : ControllerBase
         {
             _logger.LogError(ex, "Error searching doctors");
             return StatusCode(500, new { message = "An error occurred while searching for doctors" });
+        }
+    }
+
+    /// <summary>
+    /// Get all doctors (for admin use)
+    /// </summary>
+    [HttpGet]
+    public async Task<ActionResult<List<DoctorDto>>> GetAllDoctors()
+    {
+        try
+        {
+            var doctors = await _appointmentService.SearchDoctorsAsync();
+            return Ok(doctors);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving all doctors");
+            return StatusCode(500, new { message = "An error occurred while retrieving doctors" });
+        }
+    }
+
+    /// <summary>
+    /// Get doctor by ID
+    /// </summary>
+    [HttpGet("{id}")]
+    public async Task<ActionResult<DoctorDto>> GetDoctorById(int id)
+    {
+        try
+        {
+            var doctor = await _appointmentService.GetDoctorByIdAsync(id);
+            if (doctor == null)
+                return NotFound();
+                
+            return Ok(doctor);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving doctor {DoctorId}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving doctor" });
         }
     }
 }

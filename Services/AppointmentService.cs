@@ -22,16 +22,29 @@ public class AppointmentService : IAppointmentService
         try
         {
             // Validate doctor exists and is available
-            var doctor = await _context.Doctors.FindAsync(request.DoctorId);
+            var doctor = await _context.Doctors.Include(u => u.User).FirstOrDefaultAsync(r =>r.Id== request.DoctorId);
             if (doctor == null || !doctor.IsAvailable)
             {
                 throw new ArgumentException("Doctor not found or not available");
             }
 
+            // Check doctor's availability for the requested date/time (using specific Date entries)
+            var appointmentDate = request.Date;
+            var appointmentTimeOfDay = request.Time;
+            var availabilities = await _context.DoctorAvailabilities
+                .Where(a => a.DoctorId == request.DoctorId && a.Date == appointmentDate && a.IsAvailable)
+                .ToListAsync();
+
+            //var isWithinAvailability = availabilities.Any(a => appointmentTimeOfDay >= a.StartTime && appointmentTimeOfDay < a.EndTime);
+            //if (!isWithinAvailability)
+            //{
+            //    throw new InvalidOperationException("Doctor is not available at the requested time");
+            //}
+
             // Check for conflicts
             var conflictingAppointment = await _context.Appointments
                 .AnyAsync(a => a.DoctorId == request.DoctorId && 
-                              a.AppointmentDate == request.AppointmentDate &&
+                              a.AppointmentDate == request.Date &&
                               a.Status != AppointmentStatus.Cancelled);
 
             if (conflictingAppointment)
@@ -43,7 +56,7 @@ public class AppointmentService : IAppointmentService
             {
                 UserId = userId,
                 DoctorId = request.DoctorId,
-                AppointmentDate = request.AppointmentDate,
+                AppointmentDate = request.Date,
                 Reason = request.Reason,
                 Notes = request.Notes,
                 Status = AppointmentStatus.Scheduled
@@ -51,24 +64,26 @@ public class AppointmentService : IAppointmentService
 
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync();
+            
+
 
             return new AppointmentResponse
             {
                 Id = appointment.Id,
                 AppointmentDate = appointment.AppointmentDate,
                 Reason = appointment.Reason,
-                Status = appointment.Status,
+                Status = appointment.Status.ToString(),
                 Notes = appointment.Notes,
                 CreatedAt = appointment.CreatedAt,
                 Doctor = new DoctorDto
                 {
                     Id = doctor.Id,
-                    FirstName = doctor.FirstName,
-                    LastName = doctor.LastName,
-                    Specialization = doctor.Specialization,
-                    PhoneNumber = doctor.PhoneNumber,
-                    Address = doctor.Address,
-                    Rating = doctor.Rating
+                    FirstName = doctor?.User?.FirstName ?? "",
+                    LastName = doctor?.User?.LastName ??"",
+                    Specialization = doctor?.Specialization??"",
+                    PhoneNumber = doctor?.PhoneNumber ??"",
+                    Address = doctor?.Address ?? "",
+                    Rating = doctor?.Rating
                 }
             };
         }
@@ -83,6 +98,7 @@ public class AppointmentService : IAppointmentService
     {
         return await _context.Appointments
             .Include(a => a.Doctor)
+            .ThenInclude(d => d.User)
             .Where(a => a.UserId == userId)
             .OrderByDescending(a => a.AppointmentDate)
             .Select(a => new AppointmentResponse
@@ -90,18 +106,29 @@ public class AppointmentService : IAppointmentService
                 Id = a.Id,
                 AppointmentDate = a.AppointmentDate,
                 Reason = a.Reason,
-                Status = a.Status,
+                Status = a.Status.ToString(),
                 Notes = a.Notes,
                 CreatedAt = a.CreatedAt,
                 Doctor = new DoctorDto
                 {
                     Id = a.Doctor.Id,
-                    FirstName = a.Doctor.FirstName,
-                    LastName = a.Doctor.LastName,
+                    FirstName = a.Doctor.User.FirstName,
+                    LastName = a.Doctor.User.LastName,
+                    Email = a.Doctor.User.Email,
                     Specialization = a.Doctor.Specialization,
+                    LicenseNumber = a.Doctor.LicenseNumber,
                     PhoneNumber = a.Doctor.PhoneNumber,
                     Address = a.Doctor.Address,
-                    Rating = a.Doctor.Rating
+                    City = a.Doctor.City,
+                    Province = a.Doctor.Province,
+                    PostalCode = a.Doctor.PostalCode,
+                    YearsOfExperience = a.Doctor.YearsOfExperience,
+                    Rating = a.Doctor.Rating,
+                    IsAvailable = a.Doctor.IsAvailable,
+                    IsVerified = a.Doctor.IsVerified,
+                    Latitude = a.Doctor.Latitude,
+                    Longitude = a.Doctor.Longitude,
+                    CreatedAt = a.Doctor.CreatedAt
                 }
             })
             .ToListAsync();
@@ -111,24 +138,36 @@ public class AppointmentService : IAppointmentService
     {
         return await _context.Appointments
             .Include(a => a.Doctor)
+            .ThenInclude(d => d.User)
             .Where(a => a.Id == appointmentId && a.UserId == userId)
             .Select(a => new AppointmentResponse
             {
                 Id = a.Id,
                 AppointmentDate = a.AppointmentDate,
                 Reason = a.Reason,
-                Status = a.Status,
+                Status = a.Status.ToString(),
                 Notes = a.Notes,
                 CreatedAt = a.CreatedAt,
                 Doctor = new DoctorDto
                 {
                     Id = a.Doctor.Id,
-                    FirstName = a.Doctor.FirstName,
-                    LastName = a.Doctor.LastName,
+                    FirstName = a.Doctor.User.FirstName,
+                    LastName = a.Doctor.User.LastName,
+                    Email = a.Doctor.User.Email,
                     Specialization = a.Doctor.Specialization,
+                    LicenseNumber = a.Doctor.LicenseNumber,
                     PhoneNumber = a.Doctor.PhoneNumber,
                     Address = a.Doctor.Address,
-                    Rating = a.Doctor.Rating
+                    City = a.Doctor.City,
+                    Province = a.Doctor.Province,
+                    PostalCode = a.Doctor.PostalCode,
+                    YearsOfExperience = a.Doctor.YearsOfExperience,
+                    Rating = a.Doctor.Rating,
+                    IsAvailable = a.Doctor.IsAvailable,
+                    IsVerified = a.Doctor.IsVerified,
+                    Latitude = a.Doctor.Latitude,
+                    Longitude = a.Doctor.Longitude,
+                    CreatedAt = a.Doctor.CreatedAt
                 }
             })
             .FirstOrDefaultAsync();
@@ -149,9 +188,11 @@ public class AppointmentService : IAppointmentService
         return true;
     }
 
-    public async Task<List<Doctor>> SearchDoctorsAsync(string? specialization = null, string? location = null)
+    public async Task<List<SymptomsCheckerApi.DTOs.Appointments.DoctorDto>> SearchDoctorsAsync(string? specialization = null, string? location = null)
     {
-        var query = _context.Doctors.Where(d => d.IsAvailable);
+        var query = _context.Doctors
+            .Include(d => d.User)
+            .Where(d => d.IsAvailable);
 
         if (!string.IsNullOrEmpty(specialization))
         {
@@ -164,6 +205,92 @@ public class AppointmentService : IAppointmentService
                                    d.Province != null && d.Province.Contains(location));
         }
 
-        return await query.OrderByDescending(d => d.Rating).ToListAsync();
+        return await query.OrderByDescending(d => d.Rating)
+            .Select(d => new DoctorDto
+            {
+                Id = d.Id,
+                FirstName = d.User.FirstName ?? string.Empty,
+                LastName = d.User.LastName ?? string.Empty,
+                Email = d.User.Email ?? string.Empty,
+                Specialization = d.Specialization,
+                LicenseNumber = d.LicenseNumber,
+                PhoneNumber = d.PhoneNumber,
+                Address = d.Address,
+                City = d.City,
+                Province = d.Province,
+                PostalCode = d.PostalCode,
+                YearsOfExperience = d.YearsOfExperience,
+                Rating = d.Rating,
+                IsAvailable = d.IsAvailable,
+                IsVerified = d.IsVerified,
+                Latitude = d.Latitude,
+                Longitude = d.Longitude,
+                CreatedAt = d.CreatedAt
+            })
+            .ToListAsync();
+    }
+
+    public async Task<SymptomsCheckerApi.DTOs.Appointments.DoctorDto?> GetDoctorByIdAsync(int id)
+    {
+        return await _context.Doctors
+            .Include(d => d.User)
+            .Where(d => d.Id == id)
+            .Select(d => new DoctorDto
+            {
+                Id = d.Id,
+                FirstName = d.User.FirstName ?? string.Empty,
+                LastName = d.User.LastName ?? string.Empty,
+                Email = d.User.Email ?? string.Empty,
+                Specialization = d.Specialization,
+                LicenseNumber = d.LicenseNumber,
+                PhoneNumber = d.PhoneNumber,
+                Address = d.Address,
+                City = d.City,
+                Province = d.Province,
+                PostalCode = d.PostalCode,
+                YearsOfExperience = d.YearsOfExperience,
+                Rating = d.Rating,
+                IsAvailable = d.IsAvailable,
+                IsVerified = d.IsVerified,
+                Latitude = d.Latitude,
+                Longitude = d.Longitude,
+                CreatedAt = d.CreatedAt
+            })
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<List<DateTime>> GetAvailableSlotsAsync(int doctorId, DateTime date)
+    {
+        date = date.Date;
+        var availabilities = await _context.DoctorAvailabilities
+            .Where(a => a.DoctorId == doctorId && a.Date == date && a.IsAvailable)
+            .ToListAsync();
+
+        var bookedAppointments = await _context.Appointments
+            .Where(a => a.DoctorId == doctorId && a.AppointmentDate.Date == date && a.Status != AppointmentStatus.Cancelled)
+            .Select(a => a.AppointmentDate)
+            .ToListAsync();
+
+        var slots = new List<DateTime>();
+        var slotDuration = TimeSpan.FromHours(05); // default slot duration
+
+        foreach (var avail in availabilities)
+        {
+            var start = date.Add(avail.StartTime);
+            var end = date.Add(avail.EndTime);
+            var slot = start;
+            while (slot.Add(slotDuration) <= end)
+            {
+                // only add slot if not booked
+                if (!bookedAppointments.Contains(slot))
+                {
+                    slots.Add(slot);
+                }
+
+                slot = slot.Add(slotDuration);
+            }
+        }
+
+        return slots.OrderBy(s => s).ToList();
     }
 }

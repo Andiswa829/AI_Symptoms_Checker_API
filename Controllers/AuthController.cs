@@ -1,9 +1,13 @@
+using Google.Apis.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SymptomsCheckerApi.DTOs.Auth;
+using SymptomsCheckerApi.DTOs.Doctor;
 using SymptomsCheckerApi.Models;
+using SymptomsCheckerApi.Services;
 using SymptomsCheckerApi.Services.Interfaces;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Http;
 
 namespace SymptomsCheckerApi.Controllers;
 
@@ -16,19 +20,49 @@ public class AuthController : ControllerBase
     private readonly IJwtService _jwtService;
     private readonly IGoogleAuthService _googleAuthService;
     private readonly ILogger<AuthController> _logger;
+    private readonly IDoctorRegistrationService _doctorRegistrationService;
+    private readonly HttpClient _httpClient = new HttpClient();
+
 
     public AuthController(
         UserManager<User> userManager,
         SignInManager<User> signInManager,
         IJwtService jwtService,
         IGoogleAuthService googleAuthService,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger, IDoctorRegistrationService doctorRegistrationService, HttpClient httpClient)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _jwtService = jwtService;
         _googleAuthService = googleAuthService;
         _logger = logger;
+        _doctorRegistrationService = doctorRegistrationService;
+        _httpClient = httpClient;
+        _httpClient = httpClient;
+    }
+
+    /// <summary>
+    /// Register as a doctor
+    /// </summary>
+    [HttpPost("register/doctor")]
+    public async Task<ActionResult> RegisterDoctor([FromBody] DoctorRegistrationRequest request)
+    {
+        try
+        {
+            var (success, message, doctorId, userId) = await _doctorRegistrationService.RegisterDoctorAsync(request);
+
+            if (!success)
+            {
+                return BadRequest(new { message });
+            }
+
+            return Ok(new { message, doctorId, userId });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error registering doctor");
+            return StatusCode(500, new { message = "An error occurred while registering as doctor" });
+        }
     }
 
     [HttpPost("register")]
@@ -118,7 +152,9 @@ public class AuthController : ControllerBase
                     DateOfBirth = user.DateOfBirth,
                     Gender = user.Gender,
                     ProfilePicture = user.ProfilePicture,
-                    IsExternalAuth = user.IsExternalAuth
+                    IsExternalAuth = user.IsExternalAuth,
+                    IsDoctor = user.IsDoctor,
+                    IsAdmin = user.IsAdmin
                 }
             };
 
@@ -173,11 +209,20 @@ public class AuthController : ControllerBase
     /// <response code="400">❌ Invalid request or malformed ID token</response>
     /// <response code="401">🚫 Invalid Google ID token</response>
     /// <response code="500">💥 Internal server error</response>
-    [HttpPost("google")]
+    [HttpPost("googleLogin")]
     public async Task<ActionResult<AuthResponse>> GoogleAuth([FromBody] GoogleAuthRequest request)
     {
         try
         {
+            // If idToken is null/empty, verify the accessToken instead
+            if (string.IsNullOrEmpty(request.IdToken) && !string.IsNullOrEmpty(request.AccessToken))
+            {
+                // Verify access token with Google's tokeninfo endpoint
+                var tokenInfo = await _httpClient.GetFromJsonAsync<GoogleTokenInfo>(
+                    $"https://www.googleapis.com/oauth2/v3/tokeninfo?access_token={request.AccessToken}");
+
+                // Use tokenInfo.email, tokenInfo.email_verified, etc.
+            }
             var response = await _googleAuthService.AuthenticateGoogleUserAsync(request);
             return Ok(response);
         }

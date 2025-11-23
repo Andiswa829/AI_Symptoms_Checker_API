@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SymptomsCheckerApi.Data;
 using SymptomsCheckerApi.DTOs.Appointments;
+using SymptomsCheckerApi.Models;
 using SymptomsCheckerApi.Services.Interfaces;
 using System.Security.Claims;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SymptomsCheckerApi.Controllers;
 
@@ -13,13 +16,16 @@ public class AppointmentsController : ControllerBase
 {
     private readonly IAppointmentService _appointmentService;
     private readonly ILogger<AppointmentsController> _logger;
+    private readonly ApplicationDbContext _context;
 
     public AppointmentsController(
         IAppointmentService appointmentService,
-        ILogger<AppointmentsController> logger)
+        ILogger<AppointmentsController> logger,
+        ApplicationDbContext context)
     {
         _appointmentService = appointmentService;
         _logger = logger;
+        _context = context;
     }
 
     [HttpPost]
@@ -27,13 +33,26 @@ public class AppointmentsController : ControllerBase
     {
         try
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
+            var requestingUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            // Allow admins to specify a different userId in the request
+            var isAdmin = User.IsInRole("Admin");
+            string finalUserId;
+            if (!string.IsNullOrEmpty(request.UserId))
             {
-                return Unauthorized();
+                if (!isAdmin && request.UserId != requestingUserId)
+                {
+                    return Forbid();
+                }
+
+                finalUserId = request.UserId!;
+            }
+            else
+            {
+                finalUserId = requestingUserId!;
             }
 
-            var result = await _appointmentService.BookAppointmentAsync(request, userId);
+            var result = await _appointmentService.BookAppointmentAsync(request, finalUserId);
             return Ok(result);
         }
         catch (ArgumentException ex)
@@ -51,17 +70,12 @@ public class AppointmentsController : ControllerBase
         }
     }
 
-    [HttpGet]
-    public async Task<ActionResult<List<AppointmentResponse>>> GetAppointments()
+    [HttpGet("getUserAppointments/{userId}")]
+    public async Task<ActionResult<List<AppointmentResponse>>> GetAppointments(string userId)
     {
         try
         {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
+            //var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var appointments = await _appointmentService.GetUserAppointmentsAsync(userId);
             return Ok(appointments);
         }
@@ -72,17 +86,12 @@ public class AppointmentsController : ControllerBase
         }
     }
 
-    [HttpGet("{appointmentId}")]
+    [HttpGet("getAppointment{appointmentId}")]
     public async Task<ActionResult<AppointmentResponse>> GetAppointment(int appointmentId)
     {
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
             var appointment = await _appointmentService.GetAppointmentAsync(appointmentId, userId);
             if (appointment == null)
             {
@@ -98,17 +107,12 @@ public class AppointmentsController : ControllerBase
         }
     }
 
-    [HttpDelete("{appointmentId}")]
+    [HttpDelete("cancelAppointment/{appointmentId}")]
     public async Task<ActionResult> CancelAppointment(int appointmentId)
     {
         try
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
             var result = await _appointmentService.CancelAppointmentAsync(appointmentId, userId);
             if (!result)
             {
@@ -121,6 +125,38 @@ public class AppointmentsController : ControllerBase
         {
             _logger.LogError(ex, "Error cancelling appointment {AppointmentId}", appointmentId);
             return StatusCode(500, new { message = "An error occurred while cancelling the appointment" });
+        }
+    }
+
+    [HttpGet("{doctorId}/availableSlots")]
+    public async Task<ActionResult<List<DateTime>>> GetAvailableSlots(int doctorId, [FromQuery] DateTime? date = null)
+    {
+        try
+        {
+            var requestedDate = date?.Date ?? DateTime.UtcNow.Date;
+            var slots = await _appointmentService.GetAvailableSlotsAsync(doctorId, requestedDate);
+            return Ok(slots);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving available slots for doctor {DoctorId}", doctorId);
+            return StatusCode(500, new { message = "An error occurred while retrieving available slots" });
+        }
+    }
+
+    [HttpGet("{doctorId}/availability")]
+    public async Task<ActionResult<List<DoctorAvailability>>> GetDoctorAvailability(int doctorId, DateTime date)
+    {
+        try
+        {
+            var requestedDate = date != null?date: DateTime.UtcNow.Date;
+            var slots = await _appointmentService.GetAvailableSlotsAsync(doctorId, requestedDate);
+            return Ok(slots);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving appointments");
+            return StatusCode(500, new { message = "An error occurred while retrieving appointments" });
         }
     }
 }

@@ -63,6 +63,7 @@ builder.Services.AddScoped<ISymptomAnalysisService, SymptomAnalysisService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IHealthDataService, HealthDataService>();
 builder.Services.AddScoped<IOutbreakService, OutbreakService>();
+builder.Services.AddScoped<IDoctorRegistrationService, DoctorRegistrationService>();
 
 builder.Services.AddControllers();
 
@@ -177,114 +178,81 @@ app.MapControllers();
 if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await SeedDatabase(context);
+    var services = scope.ServiceProvider;
+    await SeedDatabase(services);
 }
 
 app.Run();
 
-static async Task SeedDatabase(ApplicationDbContext context)
+static async Task SeedDatabase(IServiceProvider services)
 {
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    var userManager = services.GetRequiredService<UserManager<User>>();
     await context.Database.EnsureCreatedAsync();
     
     // Seed sample doctors if none exist
     if (!context.Doctors.Any())
     {
-        var doctors = new[]
+        // Seed doctor users
+        var doctorUsers = new[]
         {
-            new Doctor
-        {
-           // Id = 1,
-            FirstName = "Sarah",
-            LastName = "van der Merwe",
-            Specialization = "General Practitioner",
-            Email = "sarah.vandermerwe@example.com",
-            PhoneNumber = "0123456789",
-            Address = "45 Jan Smuts Avenue",
-            City = "Rosebank",
-            Province = "Gauteng",
-            PostalCode = "2196",
-            YearsOfExperience = 10,
-            Rating = 4.6m,
-            IsAvailable = true,
-            Latitude = -26.1467,
-            Longitude = 28.0416
-        },
-        new Doctor
-        {
-           // Id = 2,
-            FirstName = "Thabo",
-            LastName = "Moleketi",
-            Specialization = "Pediatrics",
-            Email = "thabo.moleketi@example.com",
-            PhoneNumber = "0987654321",
-            Address = "210 Oxford Road",
-            City = "Illovo",
-            Province = "Gauteng",
-            PostalCode = "2196",
-            YearsOfExperience = 8,
-            Rating = 4.8m,
-            IsAvailable = true,
-            Latitude = -26.1363,
-            Longitude = 28.0544
-        },
-        new Doctor
-        {
-         //   Id = 3,
-            FirstName = "Fatima",
-            LastName = "Patel",
-            Specialization = "Cardiology",
-            Email = "fatima.patel@example.com",
-            PhoneNumber = "0112233445",
-            Address = "17 Baker Street",
-            City = "Sandton",
-            Province = "Gauteng",
-            PostalCode = "2196",
-            YearsOfExperience = 12,
-            Rating = 4.7m,
-            IsAvailable = true,
-            Latitude = -26.1052,
-            Longitude = 28.0560
-        },
-        new Doctor
-        {
-           // Id = 4,
-            FirstName = "Sipho",
-            LastName = "Nkosi",
-            Specialization = "Dermatology",
-            Email = "sipho.nkosi@example.com",
-            PhoneNumber = "0119988776",
-            Address = "12 Vilakazi Street",
-            City = "Soweto",
-            Province = "Gauteng",
-            PostalCode = "1804",
-            YearsOfExperience = 15,
-            Rating = 4.5m,
-            IsAvailable = true,
-            Latitude = -26.2385,
-            Longitude = 27.9087
-        },
-        new Doctor
-        {
-           // Id = 5,
-            FirstName = "Lindiwe",
-            LastName = "Khumalo",
-            Specialization = "Orthopedics",
-            Email = "lindiwe.khumalo@example.com",
-            PhoneNumber = "0113344556",
-            Address = "78 Chris Hani Road",
-            City = "Soweto",
-            Province = "Gauteng",
-            PostalCode = "1804",
-            YearsOfExperience = 20,
-            Rating = 4.9m,
-            IsAvailable = true,
-            Latitude = -26.2678,
-            Longitude = 27.8657
-        }
+            new { Email = "sarah.vandermerwe@example.com", FirstName = "Sarah", LastName = "van der Merwe", License = "GP12345" },
+            new { Email = "thabo.moleketi@example.com", FirstName = "Thabo", LastName = "Moleketi", License = "PED67890" },
+            new { Email = "fatima.patel@example.com", FirstName = "Fatima", LastName = "Patel", License = "CARD11111" },
+            new { Email = "sipho.nkosi@example.com", FirstName = "Sipho", LastName = "Nkosi", License = "DERM22222" },
+            new { Email = "lindiwe.khumalo@example.com", FirstName = "Lindiwe", LastName = "Khumalo", License = "ORTH33333" }
         };
-        
-        context.Doctors.AddRange(doctors);
+
+        var doctorsData = new[]
+        {
+            new { Email = "sarah.vandermerwe@example.com", Specialization = "General Practitioner", Phone = "0123456789", Address = "45 Jan Smuts Avenue", City = "Rosebank", Province = "Gauteng", PostalCode = "2196", Years = 10, Rating = 4.6m, Lat = -26.1467, Lon = 28.0416 },
+            new { Email = "thabo.moleketi@example.com", Specialization = "Pediatrics", Phone = "0987654321", Address = "210 Oxford Road", City = "Illovo", Province = "Gauteng", PostalCode = "2196", Years = 8, Rating = 4.8m, Lat = -26.1363, Lon = 28.0544 },
+            new { Email = "fatima.patel@example.com", Specialization = "Cardiology", Phone = "0112233445", Address = "17 Baker Street", City = "Sandton", Province = "Gauteng", PostalCode = "2196", Years = 12, Rating = 4.7m, Lat = -26.1052, Lon = 28.0560 },
+            new { Email = "sipho.nkosi@example.com", Specialization = "Dermatology", Phone = "0119988776", Address = "12 Vilakazi Street", City = "Soweto", Province = "Gauteng", PostalCode = "1804", Years = 15, Rating = 4.5m, Lat = -26.2385, Lon = 27.9087 },
+            new { Email = "lindiwe.khumalo@example.com", Specialization = "Orthopedics", Phone = "0113344556", Address = "78 Chris Hani Road", City = "Soweto", Province = "Gauteng", PostalCode = "1804", Years = 20, Rating = 4.9m, Lat = -26.2678, Lon = 27.8657 }
+        };
+
+        for (int i = 0; i < doctorUsers.Length; i++)
+        {
+            var userData = doctorUsers[i];
+            var doctorData = doctorsData[i];
+
+            var user = new User
+            {
+                UserName = userData.Email,
+                Email = userData.Email,
+                FirstName = userData.FirstName,
+                LastName = userData.LastName,
+                IsDoctor = true,
+               // DoctorLicenseNumber = userData.License,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var result = await userManager.CreateAsync(user, "Doctor123!");
+            if (result.Succeeded)
+            {
+                var doctor = new Doctor
+                {
+                    UserId = user.Id,
+                    Specialization = doctorData.Specialization,
+                    LicenseNumber = userData.License,
+                    PhoneNumber = doctorData.Phone,
+                    Address = doctorData.Address,
+                    City = doctorData.City,
+                    Province = doctorData.Province,
+                    PostalCode = doctorData.PostalCode,
+                    YearsOfExperience = doctorData.Years,
+                    Rating = doctorData.Rating,
+                    IsAvailable = true,
+                    IsVerified = true,
+                    Latitude = doctorData.Lat,
+                    Longitude = doctorData.Lon,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                context.Doctors.Add(doctor);
+            }
+        }
     }
     
     // Seed sample outbreak alerts if none exist

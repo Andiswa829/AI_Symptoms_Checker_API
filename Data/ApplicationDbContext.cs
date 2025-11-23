@@ -14,8 +14,11 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<SymptomReport> SymptomReports { get; set; }
     public DbSet<Appointment> Appointments { get; set; }
     public DbSet<Doctor> Doctors { get; set; }
+    public DbSet<DoctorAvailability> DoctorAvailabilities { get; set; }
     public DbSet<HealthData> HealthData { get; set; }
     public DbSet<OutbreakAlert> OutbreakAlerts { get; set; }
+    //public DbSet<Role> Roles { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -88,6 +91,18 @@ public class ApplicationDbContext : IdentityDbContext<User>
             .WithMany(d => d.Appointments)
             .HasForeignKey(a => a.DoctorId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Doctor>()
+            .HasOne(d => d.User)
+            .WithMany()
+            .HasForeignKey(d => d.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<DoctorAvailability>()
+            .HasOne(da => da.Doctor)
+            .WithMany(d => d.DoctorAvailabilities)
+            .HasForeignKey(da => da.DoctorId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<HealthData>()
             .HasOne(h => h.User)

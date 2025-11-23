@@ -31,4 +31,6 @@ public class UserDto
     public string? Gender { get; set; }
     public string? ProfilePicture { get; set; }
     public bool IsExternalAuth { get; set; } = false;
+    public bool IsDoctor { get; set; } = false;
+    public bool IsAdmin { get; set; } = false;
 }
