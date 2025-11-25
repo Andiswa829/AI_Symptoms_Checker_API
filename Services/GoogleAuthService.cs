@@ -178,6 +178,18 @@ public class GoogleAuthService : IGoogleAuthService
                     DateOfBirth = DateTime.MinValue // Will need to be updated later
                 };
 
+                // Persist Google tokens if provided (refresh token should be stored when offline access requested)
+                if (!string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    existingUser.GoogleHealthRefreshToken = request.RefreshToken;
+                }
+
+                if (!string.IsNullOrEmpty(request.AccessToken))
+                {
+                    existingUser.GoogleHealthAccessToken = request.AccessToken;
+                    existingUser.GoogleHealthTokenExpiry = DateTime.UtcNow.AddHours(1);
+                }
+
                 var result = await _userManager.CreateAsync(existingUser);
                 if (!result.Succeeded)
                 {
@@ -201,7 +213,19 @@ public class GoogleAuthService : IGoogleAuthService
                 {
                     existingUser.ProfilePicture = googleUser.Picture;
                 }
-                
+
+                // Update stored tokens if provided
+                if (!string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    existingUser.GoogleHealthRefreshToken = request.RefreshToken;
+                }
+
+                if (!string.IsNullOrEmpty(request.AccessToken))
+                {
+                    existingUser.GoogleHealthAccessToken = request.AccessToken;
+                    existingUser.GoogleHealthTokenExpiry = DateTime.UtcNow.AddHours(1);
+                }
+
                 existingUser.UpdatedAt = DateTime.UtcNow;
                 await _userManager.UpdateAsync(existingUser);
             }

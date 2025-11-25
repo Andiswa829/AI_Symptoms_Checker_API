@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SymptomsCheckerApi.DTOs.GoogleHealth;
 using SymptomsCheckerApi.Services.Interfaces;
+using Microsoft.AspNetCore.Identity;
+using SymptomsCheckerApi.Models;
 using System.Security.Claims;
 
 namespace SymptomsCheckerApi.Controllers;
@@ -16,13 +18,16 @@ public class GoogleHealthController : ControllerBase
 {
     private readonly IGoogleHealthService _googleHealthService;
     private readonly ILogger<GoogleHealthController> _logger;
+    private readonly UserManager<SymptomsCheckerApi.Models.User> _userManager;
 
     public GoogleHealthController(
         IGoogleHealthService googleHealthService,
-        ILogger<GoogleHealthController> logger)
+        ILogger<GoogleHealthController> logger,
+        UserManager<SymptomsCheckerApi.Models.User> userManager)
     {
         _googleHealthService = googleHealthService;
         _logger = logger;
+        _userManager = userManager;
     }
 
     /// <summary>
@@ -81,13 +86,67 @@ public class GoogleHealthController : ControllerBase
                 return Unauthorized(new { message = "User ID not found in token" });
             }
 
-            if (string.IsNullOrEmpty(request.AccessToken))
+            // Try to resolve an access token to use: incoming token, stored token, or refresh via refresh token
+            var user = await _userManager.FindByIdAsync(userId);
+            string? accessTokenToUse = request.AccessToken;
+
+            // If no access token provided by client, try stored token
+            if (string.IsNullOrEmpty(accessTokenToUse) && user != null && !string.IsNullOrEmpty(user.GoogleHealthAccessToken))
             {
-                return BadRequest(new { message = "Google Health access token is required" });
+                // Use stored token if not expired
+                if (user.GoogleHealthTokenExpiry.HasValue && user.GoogleHealthTokenExpiry > DateTime.UtcNow)
+                {
+                    accessTokenToUse = user.GoogleHealthAccessToken;
+                }
             }
 
-            // Validate the access token
-            var isValidToken = await _googleHealthService.ValidateHealthTokenAsync(request.AccessToken);
+            // If we still don't have a usable access token, try refreshing using stored refresh token
+            if (string.IsNullOrEmpty(accessTokenToUse) && user != null && !string.IsNullOrEmpty(user.GoogleHealthRefreshToken))
+            {
+                var refreshed = await _googleHealthService.RefreshAccessTokenAsync(user.GoogleHealthRefreshToken!);
+                if (refreshed != null)
+                {
+                    accessTokenToUse = refreshed.Value.AccessToken;
+                    // Save refreshed token to user
+                    user.GoogleHealthAccessToken = accessTokenToUse;
+                    user.GoogleHealthTokenExpiry = DateTime.UtcNow.AddSeconds(refreshed.Value.ExpiresIn);
+                    await _userManager.UpdateAsync(user);
+                }
+            }
+
+            if (string.IsNullOrEmpty(accessTokenToUse))
+            {
+                return BadRequest(new { 
+                    message = "Invalid or expired Google Health access token",
+                    details = "Please ensure you have a valid Google OAuth access token with the required fitness scopes or re-authorize with offline access to provide a refresh token",
+                    requiredScopes = new[]
+                    {
+                        "https://www.googleapis.com/auth/fitness.activity.read",
+                        "https://www.googleapis.com/auth/fitness.body.read",
+                        "https://www.googleapis.com/auth/fitness.sleep.read",
+                        "https://www.googleapis.com/auth/fitness.heart_rate.read",
+                        "https://www.googleapis.com/auth/fitness.blood_pressure.read",
+                        "https://www.googleapis.com/auth/fitness.oxygen_saturation.read"
+                    }
+                });
+            }
+
+            // Validate the access token (and attempt refresh if invalid)
+            var isValidToken = await _googleHealthService.ValidateHealthTokenAsync(accessTokenToUse);
+            if (!isValidToken && user != null && !string.IsNullOrEmpty(user.GoogleHealthRefreshToken))
+            {
+                // try refresh
+                var refreshed = await _googleHealthService.RefreshAccessTokenAsync(user.GoogleHealthRefreshToken!);
+                if (refreshed != null)
+                {
+                    accessTokenToUse = refreshed.Value.AccessToken;
+                    user.GoogleHealthAccessToken = accessTokenToUse;
+                    user.GoogleHealthTokenExpiry = DateTime.UtcNow.AddSeconds(refreshed.Value.ExpiresIn);
+                    await _userManager.UpdateAsync(user);
+                    isValidToken = true;
+                }
+            }
+
             if (!isValidToken)
             {
                 return BadRequest(new { 
@@ -104,6 +163,9 @@ public class GoogleHealthController : ControllerBase
                     }
                 });
             }
+
+            // Ensure the request uses the resolved token
+            request.AccessToken = accessTokenToUse;
 
             _logger.LogInformation("Syncing Google Health data for user {UserId}", userId);
 

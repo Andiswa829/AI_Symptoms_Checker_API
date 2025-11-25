@@ -15,6 +15,7 @@ public class GoogleHealthService : IGoogleHealthService
 {
     private readonly ILogger<GoogleHealthService> _logger;
     private readonly HttpClient _httpClient;
+    private readonly IConfiguration _configuration;
 
     // Google Fit data type names
     private const string HeartRateDataType = "com.google.heart_rate.bpm";
@@ -31,10 +32,12 @@ public class GoogleHealthService : IGoogleHealthService
 
     public GoogleHealthService(
         ILogger<GoogleHealthService> logger,
-        HttpClient httpClient)
+        HttpClient httpClient,
+        IConfiguration configuration)
     {
         _logger = logger;
         _httpClient = httpClient;
+        _configuration = configuration;
     }
 
     public async Task<GoogleHealthDataResponse> SyncHealthDataAsync(string userId, GoogleHealthSyncRequest request)
@@ -524,6 +527,58 @@ public class GoogleHealthService : IGoogleHealthService
         {
             _logger.LogError(ex, "Error validating Google Health access token");
             return false;
+        }
+    }
+
+    public async Task<(string AccessToken, int ExpiresIn)?> RefreshAccessTokenAsync(string refreshToken)
+    {
+        try
+        {
+            _logger.LogInformation("Refreshing Google access token using refresh token");
+
+            var clientId = _configuration["Google:ClientId"];
+            var clientSecret = _configuration["Google:ClientSecret"];
+
+            if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
+            {
+                _logger.LogWarning("Google client id/secret not configured - cannot refresh token");
+                return null;
+            }
+
+            var form = new Dictionary<string, string>
+            {
+                {"grant_type", "refresh_token"},
+                {"refresh_token", refreshToken},
+                {"client_id", clientId},
+                {"client_secret", clientSecret}
+            };
+
+            var response = await _httpClient.PostAsync("https://oauth2.googleapis.com/token", new FormUrlEncodedContent(form));
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("Failed to refresh Google token. Status: {Status}, Body: {Body}", response.StatusCode, body);
+                return null;
+            }
+
+            var json = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (!root.TryGetProperty("access_token", out var accessTokenEl))
+                return null;
+
+            var accessToken = accessTokenEl.GetString() ?? string.Empty;
+            var expiresIn = root.TryGetProperty("expires_in", out var expiresEl) ? expiresEl.GetInt32() : 3600;
+
+            _logger.LogInformation("Successfully refreshed Google access token; expires_in={ExpiresIn}", expiresIn);
+
+            return (AccessToken: accessToken, ExpiresIn: expiresIn);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error refreshing Google access token");
+            return null;
         }
     }
 

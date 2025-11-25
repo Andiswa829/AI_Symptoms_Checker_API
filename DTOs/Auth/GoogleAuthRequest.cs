@@ -11,6 +11,11 @@ public class GoogleAuthRequest
     /// This is different from the ID token and is used for API access
     /// </summary>
     public string? AccessToken { get; set; }
+    /// <summary>
+    /// Refresh token returned when requesting offline access (access_type=offline)
+    /// Store this on the server to refresh access tokens when they expire.
+    /// </summary>
+    public string? RefreshToken { get; set; }
     
     public string? FirstName { get; set; }
     public string? LastName { get; set; }

@@ -93,4 +93,12 @@ public interface IGoogleHealthService
     /// <param name="accessToken">Access token to validate</param>
     /// <returns>True if token is valid and has required scopes</returns>
     Task<bool> ValidateHealthTokenAsync(string accessToken);
+
+    /// <summary>
+    /// Refresh an access token using a Google refresh token
+    /// Returns null if refresh fails
+    /// </summary>
+    /// <param name="refreshToken">Refresh token obtained with offline access</param>
+    /// <returns>Tuple of access token and expires_in seconds, or null on failure</returns>
+    Task<(string AccessToken, int ExpiresIn)?> RefreshAccessTokenAsync(string refreshToken);
 }

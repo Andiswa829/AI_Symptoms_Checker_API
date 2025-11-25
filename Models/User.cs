@@ -26,6 +26,8 @@ public class User : IdentityUser
     public DateTime? HealthDataConsentDate { get; set; }
     public string? GoogleHealthAccessToken { get; set; }
     public DateTime? GoogleHealthTokenExpiry { get; set; }
+    // Refresh token for long-lived access to Google Health (stored when user grants offline access)
+    public string? GoogleHealthRefreshToken { get; set; }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
